@@ -8,6 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Supabase JS Library (v2) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <script>
         tailwind.config = {
             theme: {
@@ -1100,8 +1104,14 @@
         </div>
     </div>
 
-    <!-- MAIN SYSTEM CORE & OFFLINE ENGINE -->
+    <!-- MAIN SYSTEM CORE & SUPABASE CONNECTION ENGINE -->
     <script>
+        // Supabase Initialization
+        const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         let subscribers = JSON.parse(localStorage.getItem('tacsfiber_subscribers')) || [];
         let paymentLogs = JSON.parse(localStorage.getItem('tacsfiber_payments')) || [];
         let remittanceTurnovers = JSON.parse(localStorage.getItem('tacsfiber_turnovers')) || {};
@@ -1145,7 +1155,6 @@
                 if(dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
                 if(text) text.innerText = "ONLINE";
 
-                // Auto Sync on reconnection
                 syncPendingOfflineData();
             } else {
                 if(badge) badge.className = "px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1.5 bg-rose-950 text-rose-400 border border-rose-800";
@@ -1167,21 +1176,26 @@
             }
         }
 
-        function syncPendingOfflineData() {
+        async function syncPendingOfflineData() {
             if(!navigator.onLine || pendingOfflineQueue.length === 0) return;
 
-            console.log("Synchronizing offline data...");
-            setTimeout(() => {
+            console.log("Synchronizing offline data to Supabase...");
+            try {
+                for(let item of pendingOfflineQueue) {
+                    await supabase.from('payments').insert([item]);
+                }
                 pendingOfflineQueue = [];
                 localStorage.setItem('tacsfiber_offline_queue', JSON.stringify(pendingOfflineQueue));
                 updatePendingSyncBadge();
-                alert("🟢 Automatic Sync Complete! Lahat ng offline collections ay na-synchronize na sa Main Server.");
-            }, 1000);
+                alert("🟢 Automatic Sync Complete! Lahat ng offline collections ay na-synchronize na sa Supabase.");
+            } catch(err) {
+                console.error("Sync error:", err);
+            }
         }
 
         function manualTriggerSync() {
             if(!navigator.onLine) {
-                alert("Naka-OFFLINE ka pa rin, bossing. Magkakaroon ng auto-sync kapag nagkaroon na uli ng data/internet connection.");
+                alert("Naka-OFFLINE ka pa rin, bossing.");
                 return;
             }
             syncPendingOfflineData();
@@ -1193,6 +1207,31 @@
                 openAppDashboard();
             }
         });
+
+        // Supabase Fetch Subscribers Function
+        async function fetchSubscribersFromSupabase() {
+            try {
+                const { data, error } = await supabase.from('subscribers').select('*');
+                if(error) throw error;
+                if(data && data.length > 0) {
+                    subscribers = data.map(s => ({
+                        id: s.id,
+                        name: s.name,
+                        barangay: s.barangay,
+                        address: s.address,
+                        contact: s.contact,
+                        monthlyPlan: s.monthly_plan || 600,
+                        plan: s.plan || '15Mbps',
+                        dueDay: s.due_day || 19,
+                        balance: s.balance || 0,
+                        status: s.status || 'ACTIVE'
+                    }));
+                    localStorage.setItem('tacsfiber_subscribers', JSON.stringify(subscribers));
+                }
+            } catch(err) {
+                console.log("Using local cache due to network or RLS policy check:", err.message);
+            }
+        }
 
         function applyRoleRestrictionsForRegistration() {
             const role = getActiveRole();
@@ -1237,21 +1276,47 @@
             }
         }
 
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
+            
             const usernameInput = document.getElementById('login-user').value.trim();
+            const passwordInput = document.getElementById('login-pass').value.trim();
+            
+            // Hanapin ang user sa systemUsers list
             const found = systemUsers.find(u => u.username.toLowerCase() === usernameInput.toLowerCase());
             
-            if(found) {
+            if (found) {
                 localStorage.setItem('tacsfiber_auth', 'true');
                 localStorage.setItem('tacsfiber_current_user', found.username);
                 localStorage.setItem('tacsfiber_current_role', found.role);
-                openAppDashboard();
             } else {
                 localStorage.setItem('tacsfiber_auth', 'true');
                 localStorage.setItem('tacsfiber_current_user', usernameInput || 'Ronel Tacocong');
                 localStorage.setItem('tacsfiber_current_role', 'ADMIN');
+            }
+
+            // Subukang kumuha ng datos sa Supabase, pero lumipat pa rin sa dashboard kahit magka-error
+            try {
+                await fetchSubscribersFromSupabase();
+            } catch (err) {
+                console.log("Supabase fetch notice:", err);
+            }
+
+            // Buksan na ang Dashboard UI!
+            openAppDashboard();
+        }
+            } else {
+                // Kung nag-type ka ng sarili mong pangalan o bagong admin credentials
+                localStorage.setItem('tacsfiber_auth', 'true');
+                localStorage.setItem('tacsfiber_current_user', usernameInput || 'Ronel Tacocong');
+                localStorage.setItem('tacsfiber_current_role', 'ADMIN');
+                
+                await fetchSubscribersFromSupabase();
                 openAppDashboard();
+            }
+        }
+            } else {
+                alert('Invalid Username or Password! Pakisuri ang iyong credentials.');
             }
         }
 
@@ -1341,7 +1406,7 @@
             });
         }
 
-        function openAppDashboard() {
+        async function openAppDashboard() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             
@@ -1351,6 +1416,7 @@
             document.getElementById('header-user-display').innerText = currentUser;
             document.getElementById('header-role-badge').innerText = currentRole.replace('_', ' ');
 
+            await fetchSubscribersFromSupabase();
             checkAndApplyAutomaticDailyBilling();
             renderNavigationTabs();
 
@@ -1790,7 +1856,7 @@ TacsFiber Management`;
             if(accField) accField.value = 'TF-' + (2574 + subscribers.length);
         }
 
-        function handleSaveCustomer(e) {
+        async function handleSaveCustomer(e) {
             e.preventDefault();
             const name = document.getElementById('cust-name').value.trim();
             const monthlyPlan = parseFloat(document.getElementById('cust-amount').value) || 600;
@@ -1802,9 +1868,10 @@ TacsFiber Management`;
             }
 
             const initialBalance = oldBalance > 0 ? oldBalance : monthlyPlan;
+            const newSubId = document.getElementById('cust-acc-no').value;
 
-            subscribers.push({
-                id: document.getElementById('cust-acc-no').value,
+            const newSubObj = {
+                id: newSubId,
                 name: name,
                 barangay: document.getElementById('cust-barangay').value.trim() || 'Poblacion',
                 address: document.getElementById('cust-address').value.trim() || 'N/A',
@@ -1817,7 +1884,27 @@ TacsFiber Management`;
                 assignedCollector: 'Unassigned',
                 status: 'ACTIVE',
                 lastBilledMonth: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
-            });
+            };
+
+            subscribers.push(newSubObj);
+
+            // Save to Supabase
+            try {
+                await supabase.from('subscribers').insert([{
+                    id: newSubObj.id,
+                    name: newSubObj.name,
+                    barangay: newSubObj.barangay,
+                    address: newSubObj.address,
+                    contact: newSubObj.contact,
+                    monthly_plan: newSubObj.monthlyPlan,
+                    plan: newSubObj.plan,
+                    due_day: newSubObj.dueDay,
+                    balance: newSubObj.balance,
+                    status: newSubObj.status
+                }]);
+            } catch(err) {
+                console.log("Saved locally, offline/RLS restriction:", err.message);
+            }
 
             saveData();
             alert(`Nairehistro na si ${name}!`);
@@ -1871,7 +1958,7 @@ TacsFiber Management`;
             document.getElementById('edit-customer-modal').classList.add('hidden');
         }
 
-        function handleUpdateCustomer(e) {
+        async function handleUpdateCustomer(e) {
             e.preventDefault();
             const id = document.getElementById('edit-cust-id').value;
             const sub = subscribers.find(s => s.id === id);
@@ -1888,6 +1975,21 @@ TacsFiber Management`;
 
                 if(getActiveRole() === 'ADMIN') {
                     sub.balance = parseFloat(document.getElementById('edit-cust-balance').value) || 0;
+                }
+
+                try {
+                    await supabase.from('subscribers').update({
+                        name: sub.name,
+                        barangay: sub.barangay,
+                        address: sub.address,
+                        contact: sub.contact,
+                        plan: sub.plan,
+                        due_day: sub.dueDay,
+                        balance: sub.balance,
+                        monthly_plan: sub.monthlyPlan
+                    }).eq('id', sub.id);
+                } catch(err) {
+                    console.log("Supabase update info:", err.message);
                 }
 
                 saveData();
@@ -2283,7 +2385,7 @@ TacsFiber Management`;
             document.getElementById('payment-modal').classList.add('hidden');
         }
 
-        function submitPayment(e) {
+        async function submitPayment(e) {
             e.preventDefault();
             const id = document.getElementById('pay-sub-id').value;
             const payDate = new Date().toISOString().split('T')[0];
@@ -2305,14 +2407,15 @@ TacsFiber Management`;
                 date: payDate,
                 method: method,
                 encodedBy: getActiveUser(),
-                timestamp: Date.now(),
-                synced: navigator.onLine
+                timestamp: Date.now()
             };
 
             paymentLogs.unshift(newPayLog);
 
-            // Record into Offline Queue if offline
-            if(!navigator.onLine) {
+            try {
+                await supabase.from('payments').insert([newPayLog]);
+            } catch(err) {
+                console.log("Payment recorded locally:", err.message);
                 pendingOfflineQueue.push(newPayLog);
                 localStorage.setItem('tacsfiber_offline_queue', JSON.stringify(pendingOfflineQueue));
                 updatePendingSyncBadge();
@@ -2392,13 +2495,18 @@ TacsFiber Management`;
             }
         }
 
-        function deleteCustomerRecord(id) {
+        async function deleteCustomerRecord(id) {
             if(getActiveRole() !== 'ADMIN') {
                 alert('Tanging FULL ADMIN lamang ang may kapangyarihang magbura ng kustomer!');
                 return;
             }
             if(confirm('Sigurado ka bang buburahin ito?')) {
                 subscribers = subscribers.filter(s => s.id !== id);
+                try {
+                    await supabase.from('subscribers').delete().eq('id', id);
+                } catch(err) {
+                    console.log("Delete error:", err.message);
+                }
                 saveData();
             }
         }
