@@ -36,8 +36,8 @@
             pointer-events: none !important;
             z-index: 0 !important;
         }
-        .sticky-col-1 { position: sticky; left: 0; z-index: 10; }
-        .sticky-col-2 { position: sticky; left: 110px; z-index: 10; }
+        .sticky-col-1 { position: sticky; left: 0; z-index: 10; width: 110px; min-width: 110px; }
+        .sticky-col-2 { position: sticky; left: 110px; z-index: 10; width: 220px; min-width: 220px; }
         thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
 
         @media print {
@@ -51,12 +51,10 @@
 
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-        
         <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/20 via-slate-950 to-black pointer-events-none"></div>
         <div class="absolute -top-40 -left-40 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <!-- Emblem Watermark Background -->
         <div class="login-emblem-watermark flex items-center justify-center pointer-events-none opacity-20">
             <svg viewBox="0 0 600 600" class="w-full h-full pointer-events-none">
                 <circle cx="300" cy="300" r="280" fill="none" stroke="#dc2626" stroke-width="20" opacity="0.8"/>
@@ -102,10 +100,10 @@
                             <i class="fa-solid fa-shield-halved text-red-500 text-sm"></i>
                             <span>System Login</span>
                         </h2>
-                        <p class="text-[11px] text-slate-400">Mag-log in gamit ang inyong account credentials</p>
+                        <p class="text-[11px] text-slate-400">Mag-log in gamit ang inyong Supabase account credentials</p>
                     </div>
                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                        <i class="fa-solid fa-circle text-[8px] mr-1"></i>Active
+                        <i class="fa-solid fa-circle text-[8px] mr-1"></i>Supabase Cloud
                     </span>
                 </div>
 
@@ -147,6 +145,9 @@
                     <div class="flex justify-center space-x-2">
                         <button type="button" onclick="quickFillAccount('Ronel Tacocong', 'ADMIN')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-red-400 transition cursor-pointer">
                             <i class="fa-solid fa-user-shield mr-1"></i>Admin
+                        </button>
+                        <button type="button" onclick="quickFillAccount('Rolando Tacocong', 'ASSISTANT_ADMIN')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-blue-400 transition cursor-pointer">
+                            <i class="fa-solid fa-user-gear mr-1"></i>Asst Admin
                         </button>
                         <button type="button" onclick="quickFillAccount('Thomas Charles Roble', 'COLLECTOR')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-bold text-amber-400 transition cursor-pointer">
                             <i class="fa-solid fa-hand-holding-dollar mr-1"></i>Collector
@@ -274,11 +275,9 @@
                             <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
                                 <i class="fa-solid fa-sliders text-indigo-600"></i><span>Monthly Plan & Pricing Management</span>
                             </h3>
-                            <p class="text-xs text-slate-500">Customize, add, or update internet plan speeds and prices easily anytime.</p>
+                            <p id="plan-subtitle" class="text-xs text-slate-500">Live synchronized plans and pricing directly from Supabase database.</p>
                         </div>
-                        <button onclick="openAddPlanModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow cursor-pointer transition flex items-center space-x-1.5">
-                            <i class="fa-solid fa-plus"></i><span>Add New Plan</span>
-                        </button>
+                        <div id="plan-add-btn-container"></div>
                     </div>
 
                     <div class="overflow-x-auto border border-slate-200 rounded-xl">
@@ -288,7 +287,7 @@
                                     <th class="py-3 px-4">Plan Name</th>
                                     <th class="py-3 px-4">Speed / Description</th>
                                     <th class="py-3 px-4">Monthly Price (₱)</th>
-                                    <th class="py-3 px-4 text-right">Actions</th>
+                                    <th class="py-3 px-4 text-right" id="plan-action-header">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="plans-table-body" class="divide-y divide-slate-100 bg-white"></tbody>
@@ -297,27 +296,43 @@
                 </div>
             </div>
 
-            <!-- VIEW: REMITTANCE -->
+            <!-- VIEW: REMITTANCE WITH ADMIN COLLECTOR FILTER -->
             <div id="view-remittance" class="hidden space-y-6 max-w-3xl mx-auto">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                    <div class="flex justify-between items-center border-b pb-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
                         <div>
                             <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
                                 <i class="fa-solid fa-calculator text-emerald-600"></i><span>Collector Daily Remittance</span>
                             </h3>
                             <p class="text-xs text-slate-500">Koleksyon ngayong araw para sa turnover at reconciliation.</p>
                         </div>
-                        <span id="remit-date-display" class="font-mono text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-lg border"></span>
+                        
+                        <div class="flex items-center space-x-3">
+                            <!-- Filter for Admin / Asst Admin -->
+                            <div id="admin-collector-filter-container" class="hidden flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-user-check text-emerald-600 mr-1"></i>Collector:</label>
+                                <select id="remitCollectorSelect" onchange="renderRemittanceTable()" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                                    <option value="ALL">All Collectors</option>
+                                </select>
+                            </div>
+
+                           <div class="flex items-center space-x-2">
+                                <span id="remit-date-display" class="font-mono text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-lg border"></span>
+                                <button onclick="refreshDailyRemittanceView()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow cursor-pointer transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-arrows-rotate"></i><span>Refresh List</span>
+                                </button>
+                                <button onclick="turnoverRemittanceToAdmin()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow cursor-pointer transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-hand-holding-dollar"></i><span>Turn Over Remittance</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div id="remit-status-banner" class="hidden p-3 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center justify-between">
                         <div class="flex items-center space-x-2">
                             <i class="fa-solid fa-circle-check text-emerald-600 text-base"></i>
-                            <span>Ang naunang koleksyon ay opisyal nang NAIPASA / TURNED OVER kay Admin!</span>
+                            <span>Ang koleksyon ay opisyal nang NAIPASA / TURNED OVER kay Admin!</span>
                         </div>
-                        <button onclick="unlockRemittanceForNewBatch()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition">
-                            <i class="fa-solid fa-arrows-rotate mr-1"></i>Start New Batch
-                        </button>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -335,24 +350,60 @@
                         </div>
                     </div>
 
-                    <div class="border border-slate-200 rounded-xl overflow-hidden">
+                    <div class="border border-slate-200 rounded-xl overflow-hidden max-h-[350px] overflow-y-auto">
                         <table class="w-full text-left border-collapse text-xs">
-                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
+                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0">
                                 <tr>
                                     <th class="py-2.5 px-3">Subscriber Name</th>
                                     <th class="py-2.5 px-3">Billing Month</th>
                                     <th class="py-2.5 px-3">Method</th>
+                                    <th class="py-2.5 px-3">Collector</th>
                                     <th class="py-2.5 px-3 text-right">Amount</th>
                                 </tr>
                             </thead>
                             <tbody id="remit-table-body" class="divide-y bg-white"></tbody>
                         </table>
                     </div>
+                </div>
+            </div>
 
-                    <div class="flex justify-end border-t pt-4">
-                        <button id="btn-turnover-remittance" onclick="confirmRemittanceTurnover()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow flex items-center space-x-2 cursor-pointer transition">
-                            <i class="fa-solid fa-hand-holding-dollar"></i><span>Turn Over Remittance to Admin</span>
-                        </button>
+            <!-- VIEW: REMITTANCE HISTORY -->
+            <div id="view-remittance-history" class="hidden space-y-6 max-w-4xl mx-auto">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
+                                <i class="fa-solid fa-clock-rotate-left text-indigo-600"></i><span>Remittance Turnover History</span>
+                            </h3>
+                            <p class="text-xs text-slate-500">Talaan ng lahat ng mga nakapipas na na-turn over na koleksyon.</p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="date" id="history-date-filter" onchange="renderRemittanceHistoryTable()" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 bg-white focus:outline-none">
+                            <select id="history-collector-select" onchange="renderRemittanceHistoryTable()" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 bg-white focus:outline-none">
+                                <option value="ALL">All Collectors</option>
+                            </select>
+                            <button onclick="renderRemittanceHistoryTable()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1 rounded-lg text-xs font-bold shadow">
+                                Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border border-slate-200 rounded-xl overflow-hidden max-h-[450px] overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase sticky top-0">
+                                <tr>
+                                    <th class="py-3 px-3">Batch ID</th>
+                                    <th class="py-3 px-3">Subscriber</th>
+                                    <th class="py-3 px-3">Billing Month</th>
+                                    <th class="py-3 px-3">Method</th>
+                                    <th class="py-3 px-3">Collector</th>
+                                    <th class="py-3 px-3">Turnover Date</th>
+                                    <th class="py-3 px-3 text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="remittance-history-tbody" class="divide-y bg-white"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -561,7 +612,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-rose-700 mb-1">Adjust Balance (₱)</label>
+                            <label id="edit-balance-label" class="block text-xs font-bold text-rose-700 mb-1">Starting Balance / Balance (₱)</label>
                             <input type="number" step="0.01" id="edit-cust-balance" required class="w-full border border-rose-200 bg-rose-50/50 rounded-xl px-3 py-2 text-xs font-bold text-rose-700">
                         </div>
                         <div class="flex space-x-2 pt-2 border-t">
@@ -583,7 +634,11 @@
                         <input type="hidden" id="plan-id">
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Plan Name</label>
-                            <input type="text" id="plan-name" required placeholder="15Mbps Plan" class="w-full border rounded-xl px-3 py-2 text-xs font-bold">
+                            <input type="text" id="plan-name" required placeholder="15Mbps 600" class="w-full border rounded-xl px-3 py-2 text-xs font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Speed / Description</label>
+                            <input type="text" id="plan-speed" required placeholder="15 Mbps" class="w-full border rounded-xl px-3 py-2 text-xs font-bold">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1">Monthly Price (₱)</label>
@@ -657,7 +712,12 @@
             <!-- VIEW: BILLING RECORDS -->
             <div id="view-billing-records" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                    <h3 class="text-base font-bold text-slate-800">Billing Status & Due Lists</h3>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h3 class="text-base font-bold text-slate-800">Billing Status & Due Lists</h3>
+                        <div class="w-full sm:w-auto">
+                            <input type="text" id="billing-search-input" oninput="renderBillingRecordsTable()" placeholder="Search name or account no..." class="border border-slate-300 rounded-xl px-4 py-2 text-xs w-full sm:w-64 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
                     <div class="overflow-x-auto max-h-[65vh] border border-slate-200 rounded-xl">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead class="bg-slate-100 text-slate-700 uppercase font-bold">
@@ -679,8 +739,8 @@
             <div id="view-payment-history" class="hidden space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-base font-bold text-slate-800">Payment History Records</h3>
-                        <span class="text-xs text-slate-500 font-medium">Tanging Admin lamang ang maaaring mag-edit o magbura ng bayad.</span>
+                        <h3 class="text-base font-bold text-slate-800">Payment History Records (Supabase)</h3>
+                        <span id="payment-history-notice" class="text-xs text-slate-500 font-medium">Tanging Admin lamang ang maaaring mag-edit o magbura ng bayad.</span>
                     </div>
                     <div class="overflow-x-auto max-h-[65vh] border border-slate-200 rounded-xl">
                         <table class="w-full text-left border-collapse text-xs">
@@ -688,11 +748,11 @@
                                 <tr>
                                     <th class="py-3 px-3">Date Paid</th>
                                     <th class="py-3 px-3">Subscriber Name</th>
-                                    <th class="py-3 px-3">Months Paid</th>
+                                    <th class="py-3 px-3">Billing Month</th>
                                     <th class="py-3 px-3">Method</th>
                                     <th class="py-3 px-3">Amount</th>
                                     <th class="py-3 px-3">Encoder</th>
-                                    <th class="py-3 px-3 text-right">Actions</th>
+                                    <th class="py-3 px-3 text-right" id="payment-history-action-header">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="payment-history-table-body" class="divide-y divide-slate-100 bg-white"></tbody>
@@ -864,7 +924,10 @@
             <div id="view-users" class="hidden space-y-6 max-w-3xl mx-auto">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-base font-bold text-slate-800">User & Collector Accounts</h3>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">User & Collector Accounts (Supabase Cloud)</h3>
+                            <p class="text-xs text-slate-500">Naka-sync direkta sa `system_users` table ng Supabase.</p>
+                        </div>
                         <button id="add-user-btn" onclick="openAddUserModal()" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold cursor-pointer"><i class="fa-solid fa-user-plus mr-1"></i>Add User</button>
                     </div>
                     <div class="overflow-x-auto border border-slate-200 rounded-xl">
@@ -1028,7 +1091,7 @@
     <!-- ADD USER MODAL -->
     <div id="add-user-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 space-y-3">
-            <h3 class="font-bold text-slate-800 text-sm">Add New User</h3>
+            <h3 class="font-bold text-slate-800 text-sm">Add New User to Supabase</h3>
             <form onsubmit="handleSaveUser(event)" class="space-y-3">
                 <input type="text" id="new-user-name" required placeholder="Username" class="w-full border rounded-xl px-3 py-2 text-xs">
                 <input type="password" id="new-user-pass" required placeholder="Password" class="w-full border rounded-xl px-3 py-2 text-xs">
@@ -1039,7 +1102,7 @@
                 </select>
                 <div class="flex space-x-2">
                     <button type="button" onclick="closeAddUserModal()" class="flex-1 py-2 text-xs font-bold bg-slate-100 rounded-xl cursor-pointer">Cancel</button>
-                    <button type="submit" class="flex-1 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl cursor-pointer">Save</button>
+                    <button type="submit" class="flex-1 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl cursor-pointer">Save to Supabase</button>
                 </div>
             </form>
         </div>
@@ -1083,9 +1146,8 @@
         </div>
     </div>
 
-    <!-- MAIN SYSTEM CORE & SUPABASE CONNECTION ENGINE -->
+    <!-- MAIN SYSTEM CORE & LOGIC ENGINE -->
     <script>
-        // Supabase Initialization
         const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
         
@@ -1098,24 +1160,15 @@
         }
 
         let subscribers = [];
-        let paymentLogs = JSON.parse(localStorage.getItem('tacsfiber_payments')) || [];
+        let paymentLogs = [];
+        let systemUsers = [];
+        let monthlyPlans = [];
         let remittanceTurnovers = JSON.parse(localStorage.getItem('tacsfiber_turnovers')) || {};
         let pendingOfflineQueue = JSON.parse(localStorage.getItem('tacsfiber_offline_queue')) || [];
 
-        let monthlyPlans = JSON.parse(localStorage.getItem('tacsfiber_plans')) || [
-            { id: 'plan-1', name: '15Mbps', price: 600 },
-            { id: 'plan-2', name: '25Mbps', price: 899 },
-            { id: 'plan-3', name: '50Mbps', price: 1299 }
-        ];
-
-        let systemUsers = JSON.parse(localStorage.getItem('tacsfiber_users')) || [
-            { username: 'Ronel Tacocong', pass: 'Gege@635185', role: 'ADMIN' },
-            { username: 'Thomas Charles Roble', pass: '12345', role: 'COLLECTOR' },
-            { username: 'Assistant Admin', pass: '12345', role: 'ASSISTANT_ADMIN' }
-        ];
-
         let currentCollectionStatusTab = 'UNPAID';
         let filtersInitialized = false;
+        let isDataLoaded = false;
 
         function quickFillAccount(username, role) {
             document.getElementById('login-user').value = username;
@@ -1158,7 +1211,6 @@
                 }
                 pendingOfflineQueue = [];
                 localStorage.setItem('tacsfiber_offline_queue', JSON.stringify(pendingOfflineQueue));
-                alert("🟢 Automatic Sync Complete! Lahat ng offline collections ay na-synchronize na sa Supabase.");
             } catch(err) {
                 console.error("Sync error:", err);
             }
@@ -1171,7 +1223,7 @@
             }
         });
 
-        // OPTIMIZED SUPABASE FETCH FUNCTION WITH PAGINATION
+        // FETCH ALL DATA FROM SUPABASE
         async function fetchSubscribersFromSupabase(isManual = false) {
             const syncIcon = document.getElementById('sync-icon');
             const syncText = document.getElementById('sync-text');
@@ -1185,6 +1237,7 @@
                 const sb = getSupabase();
                 if(!sb) throw new Error("Supabase Client is not initialized.");
 
+                // 1. FETCH SUBSCRIBERS
                 let allData = [];
                 let pageSize = 1000;
                 let page = 0;
@@ -1200,11 +1253,8 @@
 
                     if (data && data.length > 0) {
                         allData = allData.concat(data);
-                        if (data.length < pageSize) {
-                            fetchMore = false;
-                        } else {
-                            page++;
-                        }
+                        if (data.length < pageSize) fetchMore = false;
+                        else page++;
                     } else {
                         fetchMore = false;
                     }
@@ -1215,7 +1265,7 @@
                     name: s.name,
                     barangay: s.barangay || 'Poblacion',
                     address: s.address || 'N/A',
-                    contact: s.contact || '09000000000',
+                    contact: String(s.contact || 'N/A').padStart(11, '0'),
                     monthlyPlan: parseFloat(s.monthly_plan) || 600,
                     dueDay: parseInt(s.due_day) || 19,
                     dateInstalled: s.date_installed || new Date().toISOString().split('T')[0],
@@ -1225,10 +1275,76 @@
                     lastBilledMonth: s.last_billed_month || 'October 2026'
                 }));
 
-                filtersInitialized = false; // Reset filter options flag for fresh data
+                // 2. FETCH PLANS
+                try {
+                    let { data: plansData } = await sb.from('plans').select('*').order('id', { ascending: true });
+                    if (plansData) {
+                        monthlyPlans = plansData.map(p => ({
+                            id: p.id,
+                            name: p.plan_name || 'Plan',
+                            price: parseFloat(p.price) || 0,
+                            speed: p.speed || 'N/A'
+                        }));
+                    }
+                } catch(e) { console.log(e); }
+
+                // 3. FETCH PAYMENTS & PAYMENT LOGS
+                try {
+                    let { data: payData } = await sb.from('payments').select('*');
+                    let { data: logData } = await sb.from('payment_logs').select('*');
+                    
+                    let combinedLogs = logData && logData.length > 0 ? logData : payData;
+                    let savedTurnovers = JSON.parse(localStorage.getItem('tacsfiber_turned_over_ids') || '[]');
+
+                    if (combinedLogs) {
+                        paymentLogs = combinedLogs.map(p => {
+                            const subId = p.account_no || p.subscriber_id || 'N/A';
+                            const matchedSub = subscribers.find(s => s.id === subId);
+                            const rawDate = p.payment_date || p.date || p.timestamp || new Date().toISOString().split('T')[0];
+                            const logId = p.reference_no || p.id || 'PAY-' + Date.now();
+                            
+                            return {
+                                id: logId,
+                                subscriberId: subId,
+                                subscriberName: matchedSub ? matchedSub.name : (p.subscriber_name || 'Subscriber'),
+                                monthsPaid: p.billing_id || p.months_paid || 'October 2026',
+                                amountPaid: parseFloat(p.amount_paid || p.amount || 0),
+                                date: typeof rawDate === 'string' ? rawDate.split('T')[0] : new Date(rawDate).toISOString().split('T')[0],
+                                method: p.payment_method || p.method || 'Cash',
+                                encodedBy: p.collected_by || p.encoded_by || 'System',
+                                timestamp: p.timestamp ? Number(p.timestamp) : Date.now(),
+                                turnedOver: p.turned_over || p.turnedOver || savedTurnovers.includes(logId),
+                                batchId: p.batch_id || p.batchId || null
+                            };
+                        });
+                    }
+                } catch(e) { console.log(e); }
+
+                // 4. FETCH SYSTEM USERS
+                try {
+                    let { data: usersData } = await sb.from('system_users').select('*');
+                    if (usersData && usersData.length > 0) {
+                        systemUsers = usersData.map(u => ({ username: u.username, pass: u.pass, role: u.role || 'COLLECTOR' }));
+                    } else {
+                        systemUsers = [
+                            { username: 'Ronel Tacocong', pass: 'Gege@635185', role: 'ADMIN' },
+                            { username: 'Rolando Tacocong', pass: '12345', role: 'ASSISTANT_ADMIN' },
+                            { username: 'Thomas Charles Roble', pass: '12345', role: 'COLLECTOR' }
+                        ];
+                    }
+                } catch(e) {
+                    systemUsers = [
+                        { username: 'Ronel Tacocong', pass: 'Gege@635185', role: 'ADMIN' },
+                        { username: 'Rolando Tacocong', pass: '12345', role: 'ASSISTANT_ADMIN' },
+                        { username: 'Thomas Charles Roble', pass: '12345', role: 'COLLECTOR' }
+                    ];
+                }
+
+                isDataLoaded = true;
+                filtersInitialized = false;
 
                 if (isManual) {
-                    alert(`🟢 Sync Successful!\nNa-fetch nang maayos ang ${subscribers.length} kustomer mula sa Supabase Cloud.`);
+                    alert(`🟢 Sync Successful!\nNa-update ang data mula sa Supabase Cloud.`);
                 }
             } catch(err) {
                 console.error("Supabase fetch error:", err);
@@ -1250,12 +1366,12 @@
         }
 
         async function handleLogin(e) {
-            if (e && e.preventDefault) {
-                e.preventDefault();
-            }
+            if (e && e.preventDefault) e.preventDefault();
 
             const usernameInput = document.getElementById('login-user').value.trim();
             const passwordInput = document.getElementById('login-pass').value.trim();
+
+            await fetchSubscribersFromSupabase();
 
             const found = systemUsers.find(u => 
                 u.username.toLowerCase() === usernameInput.toLowerCase() && 
@@ -1267,10 +1383,9 @@
                 localStorage.setItem('tacsfiber_current_user', found.username);
                 localStorage.setItem('tacsfiber_current_role', found.role);
 
-                await fetchSubscribersFromSupabase();
                 openAppDashboard();
             } else {
-                alert('🔴 Mali ang Username o Password!\nSiguraduhing nakatala ang iyong account sa listahan ng User Management.');
+                alert('🔴 Mali ang Username o Password!');
                 document.getElementById('login-pass').value = '';
             }
         }
@@ -1281,7 +1396,14 @@
         }
 
         function getActiveUser() { return localStorage.getItem('tacsfiber_current_user') || 'Ronel Tacocong'; }
-        function getActiveRole() { return localStorage.getItem('tacsfiber_current_role') || 'ADMIN'; }
+        
+        function getActiveRole() { 
+            const user = getActiveUser();
+            if (user.toLowerCase() === 'ronel tacocong') return 'ADMIN';
+            const found = systemUsers.find(u => u.username.toLowerCase() === user.toLowerCase());
+            if (found) return found.role;
+            return localStorage.getItem('tacsfiber_current_role') || 'ADMIN'; 
+        }
 
         function filterAlertCategory(type) {
             switchTab('collection-alert');
@@ -1329,13 +1451,14 @@
             container.innerHTML = '';
 
             let tabs = [];
-            if(role === 'ADMIN' || role === 'ASSISTANT_ADMIN') {
+            if(role === 'ADMIN') {
                 tabs = [
                     { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie text-red-500' },
                     { id: 'customers-list', label: 'Customers List', icon: 'fa-address-book text-emerald-400' },
                     { id: 'collection-alert', label: 'Collection Alert', icon: 'fa-triangle-exclamation text-rose-500' },
                     { id: 'collection-list', label: 'Collection List', icon: 'fa-list-check text-amber-400' },
                     { id: 'remittance', label: 'Daily Remittance', icon: 'fa-calculator text-emerald-400' },
+                    { id: 'remittance-history', label: 'Remittance History', icon: 'fa-clock-rotate-left text-indigo-400' },
                     { id: 'add-customer', label: 'Add Customer', icon: 'fa-user-plus text-indigo-400' },
                     { id: 'plan-management', label: 'Plans & Prices', icon: 'fa-sliders text-purple-400' },
                     { id: 'billing-records', label: 'Billing Records', icon: 'fa-file-invoice-dollar text-blue-400' },
@@ -1343,6 +1466,22 @@
                     { id: 'payment-history', label: 'Payment History', icon: 'fa-receipt text-cyan-400' },
                     { id: 'audit-reports', label: 'Audit & Reports', icon: 'fa-file-shield text-amber-400' },
                     { id: 'users', label: 'User Management', icon: 'fa-users-gear text-red-500' },
+                    { id: 'backup', label: 'Batch Import / Backup', icon: 'fa-database text-purple-400' }
+                ];
+            } else if(role === 'ASSISTANT_ADMIN') {
+                tabs = [
+                    { id: 'dashboard', label: 'Dashboard', icon: 'fa-chart-pie text-red-500' },
+                    { id: 'customers-list', label: 'Customers List', icon: 'fa-address-book text-emerald-400' },
+                    { id: 'collection-alert', label: 'Collection Alert', icon: 'fa-triangle-exclamation text-rose-500' },
+                    { id: 'collection-list', label: 'Collection List', icon: 'fa-list-check text-amber-400' },
+                    { id: 'remittance', label: 'Daily Remittance', icon: 'fa-calculator text-emerald-400' },
+                    { id: 'remittance-history', label: 'Remittance History', icon: 'fa-clock-rotate-left text-indigo-400' },
+                    { id: 'add-customer', label: 'Add Customer', icon: 'fa-user-plus text-indigo-400' },
+                    { id: 'plan-management', label: 'Plans & Prices', icon: 'fa-sliders text-purple-400' },
+                    { id: 'billing-records', label: 'Billing Records', icon: 'fa-file-invoice-dollar text-blue-400' },
+                    { id: 'disconnected-list', label: 'Disconnected List', icon: 'fa-user-slash text-rose-500' },
+                    { id: 'payment-history', label: 'Payment History', icon: 'fa-receipt text-cyan-400' },
+                    { id: 'audit-reports', label: 'Audit & Reports', icon: 'fa-file-shield text-amber-400' },
                     { id: 'backup', label: 'Batch Import / Backup', icon: 'fa-database text-purple-400' }
                 ];
             } else {
@@ -1371,7 +1510,10 @@
             document.getElementById('header-user-display').innerText = currentUser;
             document.getElementById('header-role-badge').innerText = currentRole.replace('_', ' ');
 
-            await fetchSubscribersFromSupabase();
+            if (!isDataLoaded) {
+                await fetchSubscribersFromSupabase();
+            }
+
             renderNavigationTabs();
 
             if(currentRole === 'COLLECTOR') {
@@ -1386,17 +1528,13 @@
         }
 
         function saveData() {
-            localStorage.setItem('tacsfiber_payments', JSON.stringify(paymentLogs));
-            localStorage.setItem('tacsfiber_users', JSON.stringify(systemUsers));
             localStorage.setItem('tacsfiber_turnovers', JSON.stringify(remittanceTurnovers));
-            localStorage.setItem('tacsfiber_plans', JSON.stringify(monthlyPlans));
             refreshAllViewsUIOnly();
         }
 
         function populateAllFilterDropdownsOnce() {
             if (filtersInitialized) return;
 
-            // Master Filter
             const masterBrgySelect = document.getElementById('masterBrgyFilter');
             const masterDueSelect = document.getElementById('masterDueFilter');
             if (masterBrgySelect && masterDueSelect) {
@@ -1406,7 +1544,6 @@
                 masterDueSelect.innerHTML = '<option value="ALL">All Due Dates</option>' + uniqueDueDays.map(d => `<option value="${d}">Day ${d}</option>`).join('');
             }
 
-            // Alert Filter
             const alertBrgySelect = document.getElementById('alertBrgyFilter');
             const alertDueSelect = document.getElementById('alertDueFilter');
             if (alertBrgySelect && alertDueSelect) {
@@ -1416,7 +1553,6 @@
                 alertDueSelect.innerHTML = '<option value="ALL">All Due Dates</option>' + uniqueDueDays.map(d => `<option value="${d}">Day ${d}</option>`).join('');
             }
 
-            // Collection List Filter
             const colBrgySelect = document.getElementById('barangayFilter');
             const colDueSelect = document.getElementById('dueDateFilter');
             if (colBrgySelect && colDueSelect) {
@@ -1426,11 +1562,16 @@
                 colDueSelect.innerHTML = '<option value="ALL">All Due Dates</option>' + uniqueDueDays.map(d => `<option value="${d}">Day ${d}</option>`).join('');
             }
 
-            // Audit Encoder Filter
             const auditSelect = document.getElementById('auditEncoderFilter');
             if (auditSelect) {
                 const encoders = [...new Set(paymentLogs.map(p => p.encodedBy || 'System'))].sort();
                 auditSelect.innerHTML = '<option value="ALL">All Collectors</option>' + encoders.map(e => `<option value="${e}">${e}</option>`).join('');
+            }
+
+            const historySelect = document.getElementById('history-collector-select');
+            if (historySelect) {
+                const collectors = [...new Set(systemUsers.map(u => u.username))];
+                historySelect.innerHTML = '<option value="ALL">All Collectors</option>' + collectors.map(c => `<option value="${c}">${c}</option>`).join('');
             }
 
             filtersInitialized = true;
@@ -1449,11 +1590,7 @@
             renderAuditTable();
             renderUsersTable();
             renderRemittanceTable();
-        }
-
-        async function refreshAllViews() {
-            await fetchSubscribersFromSupabase();
-            refreshAllViewsUIOnly();
+            renderRemittanceHistoryTable();
         }
 
         function switchTab(tabId) {
@@ -1461,8 +1598,11 @@
             if(role === 'COLLECTOR' && tabId !== 'collection-list' && tabId !== 'remittance') {
                 tabId = 'collection-list';
             }
+            if(role === 'ASSISTANT_ADMIN' && tabId === 'users') {
+                tabId = 'dashboard';
+            }
 
-            ['dashboard', 'customers-list', 'collection-alert', 'collection-list', 'remittance', 'add-customer', 'plan-management', 'billing-records', 'payment-history', 'disconnected-list', 'audit-reports', 'users', 'backup'].forEach(t => {
+            ['dashboard', 'customers-list', 'collection-alert', 'collection-list', 'remittance', 'remittance-history', 'add-customer', 'plan-management', 'billing-records', 'payment-history', 'disconnected-list', 'audit-reports', 'users', 'backup'].forEach(t => {
                 const view = document.getElementById('view-' + t);
                 const tab = document.getElementById('tab-' + t);
                 if(view) view.classList.add('hidden');
@@ -1479,7 +1619,19 @@
                 activeTab.classList.remove('border-transparent', 'text-neutral-400');
                 activeTab.classList.add('border-red-600', 'text-white');
             }
-            refreshAllViewsUIOnly();
+
+            if(tabId === 'dashboard') updateDashboardStats();
+            else if(tabId === 'customers-list') renderCustomersListTable();
+            else if(tabId === 'collection-alert') renderCollectionAlertTables();
+            else if(tabId === 'collection-list') renderCollectionListTable();
+            else if(tabId === 'remittance') renderRemittanceTable();
+            else if(tabId === 'remittance-history') renderRemittanceHistoryTable();
+            else if(tabId === 'plan-management') renderPlansTable();
+            else if(tabId === 'billing-records') renderBillingRecordsTable();
+            else if(tabId === 'payment-history') renderPaymentHistoryTable();
+            else if(tabId === 'disconnected-list') renderDisconnectedList();
+            else if(tabId === 'audit-reports') renderAuditTable();
+            else if(tabId === 'users') renderUsersTable();
         }
 
         function renderPlansTable() {
@@ -1487,14 +1639,29 @@
             if(role === 'COLLECTOR') return;
 
             const tbody = document.getElementById('plans-table-body');
+            const addBtnContainer = document.getElementById('plan-add-btn-container');
+            const subtitle = document.getElementById('plan-subtitle');
             if(!tbody) return;
+
+            if(role === 'ASSISTANT_ADMIN') {
+                if(addBtnContainer) addBtnContainer.innerHTML = '';
+                if(subtitle) subtitle.innerText = 'View Only: Plans and pricing synchronized from Supabase.';
+            } else {
+                if(addBtnContainer) addBtnContainer.innerHTML = `<button onclick="openAddPlanModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow cursor-pointer transition flex items-center space-x-1.5"><i class="fa-solid fa-plus"></i><span>Add New Plan</span></button>`;
+            }
+
             tbody.innerHTML = '';
+
+            if(monthlyPlans.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 font-medium">Walang nahanap na plans sa database.</td></tr>`;
+                return;
+            }
 
             monthlyPlans.forEach((p) => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50 border-b">
                         <td class="py-3 px-4 font-bold text-slate-800">${p.name}</td>
-                        <td class="py-3 px-4 text-slate-500 font-mono">Custom Monthly Speed/Plan</td>
+                        <td class="py-3 px-4 text-slate-600 font-mono font-bold">${p.speed}</td>
                         <td class="py-3 px-4 font-bold text-indigo-600">₱${p.price.toLocaleString(undefined, {minimumFractionDigits:2})}</td>
                         <td class="py-3 px-4 text-right space-x-2">
                             ${role === 'ADMIN' ? `
@@ -1514,6 +1681,7 @@
             }
             document.getElementById('plan-id').value = '';
             document.getElementById('plan-name').value = '';
+            document.getElementById('plan-speed').value = '';
             document.getElementById('plan-price').value = '';
             document.getElementById('plan-modal-title').innerText = 'Add New Monthly Plan';
             document.getElementById('plan-modal').classList.remove('hidden');
@@ -1525,11 +1693,12 @@
                 alert('Tanging ADMIN lamang ang makakapag-manage ng plans at presyo!');
                 return;
             }
-            const p = monthlyPlans.find(plan => plan.id === planId);
+            const p = monthlyPlans.find(plan => String(plan.id) === String(planId));
             if(!p) return;
 
             document.getElementById('plan-id').value = p.id;
             document.getElementById('plan-name').value = p.name;
+            document.getElementById('plan-speed').value = p.speed;
             document.getElementById('plan-price').value = p.price;
             document.getElementById('plan-modal-title').innerText = 'Edit Monthly Plan';
             document.getElementById('plan-modal').classList.remove('hidden');
@@ -1541,39 +1710,40 @@
             document.getElementById('plan-modal').classList.add('hidden');
         }
 
-        function handleSavePlan(e) {
+        async function handleSavePlan(e) {
             e.preventDefault();
+            if(getActiveRole() !== 'ADMIN') {
+                alert('Bawal sa Assistant Admin ang mag-edit o mag-add ng Plans & Prices!');
+                return;
+            }
             const id = document.getElementById('plan-id').value;
             const name = document.getElementById('plan-name').value.trim();
+            const speed = document.getElementById('plan-speed').value.trim();
             const price = parseFloat(document.getElementById('plan-price').value) || 0;
 
+            const sb = getSupabase();
             if(id) {
-                const plan = monthlyPlans.find(p => p.id === id);
-                if(plan) {
-                    plan.name = name;
-                    plan.price = price;
-                }
+                if(sb) await sb.from('plans').update({ plan_name: name, speed: speed, price: price }).eq('id', id);
             } else {
-                monthlyPlans.push({
-                    id: 'plan-' + Date.now(),
-                    name: name,
-                    price: price
-                });
+                if(sb) await sb.from('plans').insert([{ plan_name: name, speed: speed, price: price }]);
             }
 
-            saveData();
             closePlanModal();
-            alert(`Matagumpay na na-save ang plan na ${name} (₱${price})!`);
+            await fetchSubscribersFromSupabase();
+            refreshAllViewsUIOnly();
+            alert(`Matagumpay na na-save sa Supabase ang plan na ${name}!`);
         }
 
-        function deletePlan(planId) {
+        async function deletePlan(planId) {
             if(getActiveRole() !== 'ADMIN') {
                 alert('Tanging ADMIN lamang ang pwedeng magbura ng plans!');
                 return;
             }
-            if(confirm('Sigurado ka bang buburahin ang plan na ito?')) {
-                monthlyPlans = monthlyPlans.filter(p => p.id !== planId);
-                saveData();
+            if(confirm('Sigurado ka bang buburahin ang plan na ito sa Supabase?')) {
+                const sb = getSupabase();
+                if(sb) await sb.from('plans').delete().eq('id', planId);
+                await fetchSubscribersFromSupabase();
+                refreshAllViewsUIOnly();
             }
         }
 
@@ -1583,14 +1753,11 @@
             const sub = subscribers.find(s => s.id === subId);
             if(!sub) return;
 
-            const currentStatus = sub.status || 'ACTIVE';
-            const newStatus = currentStatus === 'ACTIVE' ? 'DISCONNECTED' : 'ACTIVE';
+            const newStatus = (sub.status || 'ACTIVE') === 'ACTIVE' ? 'DISCONNECTED' : 'ACTIVE';
             sub.status = newStatus;
 
             const sb = getSupabase();
-            if(sb) {
-                await sb.from('subscribers').update({ status: newStatus }).eq('id', subId);
-            }
+            if(sb) await sb.from('subscribers').update({ status: newStatus }).eq('id', subId);
             refreshAllViewsUIOnly();
         }
 
@@ -1600,9 +1767,7 @@
             if(confirm(`Sigurado ka bang ibabalik at ire-reconnect ang linya ni ${sub.name}?`)) {
                 sub.status = 'ACTIVE';
                 const sb = getSupabase();
-                if(sb) {
-                    await sb.from('subscribers').update({ status: 'ACTIVE' }).eq('id', subId);
-                }
+                if(sb) await sb.from('subscribers').update({ status: 'ACTIVE' }).eq('id', subId);
                 refreshAllViewsUIOnly();
                 alert(`Matagumpay na na-reconnect ang linya ni ${sub.name}!`);
             }
@@ -1622,30 +1787,21 @@
 
             let filtered = subscribers;
 
-            if(brgyFilter !== 'ALL') {
-                filtered = filtered.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
-            }
-            if(dueFilter !== 'ALL') {
-                filtered = filtered.filter(s => String(s.dueDay || 19) === String(dueFilter));
-            }
-            if(search) {
-                filtered = filtered.filter(s => s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search));
-            }
+            if(brgyFilter !== 'ALL') filtered = filtered.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
+            if(dueFilter !== 'ALL') filtered = filtered.filter(s => String(s.dueDay || 19) === String(dueFilter));
+            if(search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search));
 
             if(filtered.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="12" class="text-center py-6 text-slate-400 font-medium">Walang kustomer na tumutugma sa napiling filter/search.</td></tr>`;
                 return;
             }
 
-            // Render limit to avoid DOM lagging for 1,500+ items
-            const displayList = filtered.slice(0, 300);
-
-            displayList.forEach(s => {
+            tbody.innerHTML = filtered.slice(0, 300).map(s => {
                 const isPaid = (s.balance || 0) <= 0;
                 const assignedCol = s.assignedCollector || 'Unassigned';
                 const status = s.status || 'ACTIVE';
 
-                tbody.innerHTML += `
+                return `
                     <tr class="hover:bg-slate-50 border-b">
                         <td class="py-3 px-3 font-mono font-bold text-indigo-600 bg-white sticky-col-1">${s.id}</td>
                         <td class="py-3 px-3 font-semibold text-slate-800 bg-white sticky-col-2">${s.name}</td>
@@ -1674,11 +1830,7 @@
                         </td>
                     </tr>
                 `;
-            });
-
-            if (filtered.length > 300) {
-                tbody.innerHTML += `<tr><td colspan="12" class="text-center py-3 bg-slate-100 text-slate-500 font-bold">Showing top 300 of ${filtered.length} customers. Use search to find specific subscriber.</td></tr>`;
-            }
+            }).join('');
         }
 
         function renderCollectionAlertTables() {
@@ -1691,12 +1843,8 @@
 
             let list = subscribers.filter(s => (s.balance || 0) > 0);
 
-            if(brgyFilter !== 'ALL') {
-                list = list.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
-            }
-            if(dueFilter !== 'ALL') {
-                list = list.filter(s => String(s.dueDay || 19) === String(dueFilter));
-            }
+            if(brgyFilter !== 'ALL') list = list.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
+            if(dueFilter !== 'ALL') list = list.filter(s => String(s.dueDay || 19) === String(dueFilter));
 
             const overdueList = list.filter(s => (s.dueDay || 19) < currentDay);
             const dueTodayList = list.filter(s => (s.dueDay || 19) === currentDay);
@@ -1721,9 +1869,9 @@
                 return;
             }
 
-            list.slice(0, 100).forEach(s => {
+            tbody.innerHTML = list.slice(0, 100).map(s => {
                 const assignedCol = s.assignedCollector || 'Unassigned';
-                tbody.innerHTML += `
+                return `
                     <tr class="hover:bg-slate-50 border-b">
                         <td class="py-2.5 px-3 font-mono font-bold text-indigo-600">${s.id}</td>
                         <td class="py-2.5 px-3 font-bold text-slate-800">${s.name}</td>
@@ -1742,7 +1890,7 @@
                         </td>
                     </tr>
                 `;
-            });
+            }).join('');
         }
 
         function openNotificationModal(subId, category) {
@@ -1754,7 +1902,6 @@
             document.getElementById('notif-contact-raw').value = sub.contact;
             
             let statusText = category.toLowerCase();
-
             let msg = `Hi ${sub.name}, pinapaalala po namin mula sa TacsFiber na ang inyong balanse na ₱${(sub.balance||0).toLocaleString()} para sa inyong internet plan ay ${statusText}. Maraming salamat po!
 Maaari kayong magbayad sa pamamagitan ng Gcash Payment.
 
@@ -1861,6 +2008,8 @@ TacsFiber Management`;
         function openEditCustomerModal(subId) {
             const sub = subscribers.find(s => s.id === subId);
             if(!sub) return;
+            const role = getActiveRole();
+
             document.getElementById('edit-cust-id').value = sub.id;
             document.getElementById('edit-cust-name').value = sub.name;
             document.getElementById('edit-cust-barangay').value = sub.barangay || 'Poblacion';
@@ -1868,7 +2017,20 @@ TacsFiber Management`;
             document.getElementById('edit-cust-contact').value = sub.contact || '';
             document.getElementById('edit-cust-monthly-plan').value = sub.monthlyPlan || 600;
             document.getElementById('edit-cust-dueday').value = sub.dueDay || 19;
-            document.getElementById('edit-cust-balance').value = sub.balance || 0;
+            
+            const balanceField = document.getElementById('edit-cust-balance');
+            const balanceLabel = document.getElementById('edit-balance-label');
+            balanceField.value = sub.balance || 0;
+
+            if(role === 'ASSISTANT_ADMIN') {
+                balanceField.readOnly = true;
+                balanceField.className = "w-full border border-slate-300 bg-slate-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-not-allowed";
+                if(balanceLabel) balanceLabel.innerText = "Starting / Current Balance (Locked for Assistant Admin)";
+            } else {
+                balanceField.readOnly = false;
+                balanceField.className = "w-full border border-rose-200 bg-rose-50/50 rounded-xl px-3 py-2 text-xs font-bold text-rose-700";
+                if(balanceLabel) balanceLabel.innerText = "Adjust Balance (₱)";
+            }
 
             document.getElementById('edit-customer-modal').classList.remove('hidden');
             document.getElementById('edit-customer-modal').classList.add('flex');
@@ -1882,15 +2044,24 @@ TacsFiber Management`;
         async function handleUpdateCustomer(e) {
             e.preventDefault();
             const id = document.getElementById('edit-cust-id').value;
-            const updatedData = {
+            const role = getActiveRole();
+            const sub = subscribers.find(s => s.id === id);
+
+            let updatedData = {
                 name: document.getElementById('edit-cust-name').value.trim(),
                 barangay: document.getElementById('edit-cust-barangay').value.trim(),
                 address: document.getElementById('edit-cust-address').value.trim(),
                 contact: document.getElementById('edit-cust-contact').value.trim(),
                 monthly_plan: parseFloat(document.getElementById('edit-cust-monthly-plan').value) || 600,
-                due_day: parseInt(document.getElementById('edit-cust-dueday').value, 10) || 19,
-                balance: parseFloat(document.getElementById('edit-cust-balance').value) || 0
+                due_day: parseInt(document.getElementById('edit-cust-dueday').value, 10) || 19
             };
+
+            if(role === 'ASSISTANT_ADMIN') {
+                // Panatilihin ang dating balance kung Assistant Admin
+                updatedData.balance = sub ? sub.balance : 0;
+            } else {
+                updatedData.balance = parseFloat(document.getElementById('edit-cust-balance').value) || 0;
+            }
 
             try {
                 const sb = getSupabase();
@@ -1948,24 +2119,18 @@ TacsFiber Management`;
                 list = list.filter(s => (s.balance || 0) <= 0);
             }
 
-            if(brgyFilter !== 'ALL') {
-                list = list.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
-            }
-            if(dueFilter !== 'ALL') {
-                list = list.filter(s => String(s.dueDay || 19) === String(dueFilter));
-            }
-            if(search) {
-                list = list.filter(s => s.name.toLowerCase().includes(search) || (s.address && s.address.toLowerCase().includes(search)));
-            }
+            if(brgyFilter !== 'ALL') list = list.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
+            if(dueFilter !== 'ALL') list = list.filter(s => String(s.dueDay || 19) === String(dueFilter));
+            if(search) list = list.filter(s => s.name.toLowerCase().includes(search) || (s.address && s.address.toLowerCase().includes(search)));
 
             if(list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="9" class="text-center py-6 text-slate-400 font-medium">${currentCollectionStatusTab === 'UNPAID' ? 'Walang natitirang kustomer na may balanse.' : 'Walang kustomer sa Paid/Settled status.'}</td></tr>`;
                 return;
             }
 
-            list.slice(0, 200).forEach(s => {
+            tbody.innerHTML = list.slice(0, 200).map(s => {
                 const isPaid = (s.balance || 0) <= 0;
-                tbody.innerHTML += `
+                return `
                     <tr class="hover:bg-amber-50/50 border-b">
                         <td class="py-3 px-3 font-mono font-bold text-amber-700">${s.id}</td>
                         <td class="py-3 px-3 font-bold text-slate-800">${s.name}</td>
@@ -1990,7 +2155,7 @@ TacsFiber Management`;
                         </td>
                     </tr>
                 `;
-            });
+            }).join('');
         }
 
         function renderDisconnectedList() {
@@ -2004,82 +2169,71 @@ TacsFiber Management`;
             const search = document.getElementById('disconnected-search-input') ? document.getElementById('disconnected-search-input').value.toLowerCase().trim() : '';
             let disconnectedSubs = subscribers.filter(s => (s.status || 'ACTIVE') === 'DISCONNECTED');
 
-            if(search) {
-                disconnectedSubs = disconnectedSubs.filter(s => s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search));
-            }
+            if(search) disconnectedSubs = disconnectedSubs.filter(s => s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search));
 
             if(disconnectedSubs.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 font-medium">Walang nakitang kustomer na nakaputol/disconnected.</td></tr>`;
                 return;
             }
 
-            disconnectedSubs.forEach(s => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 border-b">
-                        <td class="py-3 px-3 font-mono font-bold text-rose-600">${s.id}</td>
-                        <td class="py-3 px-3 font-bold text-slate-800">${s.name}</td>
-                        <td class="py-3 px-3 font-bold text-indigo-700">${s.barangay || 'Poblacion'}</td>
-                        <td class="py-3 px-3 text-slate-600">${s.address || 'N/A'}</td>
-                        <td class="py-3 px-3 font-mono">${s.contact}</td>
-                        <td class="py-3 px-3">₱${(s.monthlyPlan || 600).toLocaleString()}</td>
-                        <td class="py-3 px-3 font-bold text-rose-600">₱${(s.balance || 0).toLocaleString()}</td>
-                        <td class="py-3 px-3 text-right space-x-2">
-                            <button onclick="reconnectSubscriber('${s.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition inline-flex items-center space-x-1">
-                                <i class="fa-solid fa-wifi"></i><span>Reconnect</span>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
+            tbody.innerHTML = disconnectedSubs.map(s => `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="py-3 px-3 font-mono font-bold text-rose-600">${s.id}</td>
+                    <td class="py-3 px-3 font-bold text-slate-800">${s.name}</td>
+                    <td class="py-3 px-3 font-bold text-indigo-700">${s.barangay || 'Poblacion'}</td>
+                    <td class="py-3 px-3 text-slate-600">${s.address || 'N/A'}</td>
+                    <td class="py-3 px-3 font-mono">${s.contact}</td>
+                    <td class="py-3 px-3">₱${(s.monthlyPlan || 600).toLocaleString()}</td>
+                    <td class="py-3 px-3 font-bold text-rose-600">₱${(s.balance || 0).toLocaleString()}</td>
+                    <td class="py-3 px-3 text-right space-x-2">
+                        <button onclick="reconnectSubscriber('${s.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition inline-flex items-center space-x-1">
+                            <i class="fa-solid fa-wifi"></i><span>Reconnect</span>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
         }
 
+        function refreshDailyRemittanceView() {
+            renderRemittanceTable();
+            alert("🟢 Na-refresh na ang Daily Remittance list!");
+        }
+
+        // RENDER REMITTANCE WITH ADMIN FILTER & COLLECTOR DEDICATED TURNOVER
         function renderRemittanceTable() {
             const today = new Date().toISOString().split('T')[0];
             const currentUser = getActiveUser();
             const currentRole = getActiveRole();
 
-            document.getElementById('remit-date-display').innerText = today;
-            const userKey = `${today}_${currentUser}`;
-            const isSubmitted = remittanceTurnovers[userKey] || false;
+            const dateDisplay = document.getElementById('remit-date-display');
+            if (dateDisplay) dateDisplay.innerText = today;
 
-            const banner = document.getElementById('remit-status-banner');
-            const turnBtn = document.getElementById('btn-turnover-remittance');
+            const adminFilterContainer = document.getElementById('admin-collector-filter-container');
 
-            const turnoverTimestamp = remittanceTurnovers[`${userKey}_time`] || 0;
+            let selectedCollector = currentUser;
 
-            let logsToday = paymentLogs.filter(p => p.date === today && (p.timestamp || 0) > turnoverTimestamp);
-            if(currentRole === 'COLLECTOR') {
-                logsToday = logsToday.filter(p => p.encodedBy.toLowerCase() === currentUser.toLowerCase());
-            }
-
-            if(isSubmitted && logsToday.length === 0) {
-                if(banner) banner.classList.remove('hidden');
-                if(turnBtn) {
-                    turnBtn.disabled = true;
-                    turnBtn.className = "bg-slate-300 text-slate-500 font-bold px-5 py-2.5 rounded-xl text-xs flex items-center space-x-2 cursor-not-allowed";
-                    turnBtn.innerHTML = '<i class="fa-solid fa-check-double text-emerald-600"></i><span>Remittance Turned Over</span>';
+            if(currentRole === 'ADMIN' || currentRole === 'ASSISTANT_ADMIN') {
+                if(adminFilterContainer) adminFilterContainer.classList.remove('hidden');
+                
+                const remitSelect = document.getElementById('remitCollectorSelect');
+                if(remitSelect && remitSelect.options.length <= 1) {
+                    const collectors = [...new Set(systemUsers.map(u => u.username))];
+                    remitSelect.innerHTML = '<option value="ALL">All Collectors</option>' + collectors.map(c => `<option value="${c}">${c}</option>`).join('');
                 }
 
-                document.getElementById('remit-cash-total').innerText = '₱0.00';
-                document.getElementById('remit-gcash-total').innerText = '₱0.00';
-                document.getElementById('remit-grand-total').innerText = '₱0.00';
-
-                const tbody = document.getElementById('remit-table-body');
-                if(tbody) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400 font-medium">Naiturn-over na ang naunang koleksyon. Malinis ang talaan para sa bagong singilin!</td></tr>`;
-                }
-                return;
+                selectedCollector = remitSelect ? remitSelect.value : 'ALL';
             } else {
-                if(banner) banner.classList.add('hidden');
-                if(turnBtn) {
-                    turnBtn.disabled = false;
-                    turnBtn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow flex items-center space-x-2 cursor-pointer transition";
-                    turnBtn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar"></i><span>Turn Over Remittance to Admin</span>';
-                }
+                if(adminFilterContainer) adminFilterContainer.classList.add('hidden');
             }
 
-            const cashTotal = logsToday.filter(p => p.method === 'Cash').reduce((acc, p) => acc + (p.amountPaid || 0), 0);
-            const gcashTotal = logsToday.filter(p => p.method === 'GCash').reduce((acc, p) => acc + (p.amountPaid || 0), 0);
+            let activeBatchLogs = paymentLogs.filter(p => {
+                const isToday = p.date && p.date.startsWith(today);
+                const matchesCollector = (selectedCollector === 'ALL' || (p.encodedBy || '').toLowerCase() === selectedCollector.toLowerCase());
+                return isToday && matchesCollector && !p.turnedOver;
+            });
+
+            const cashTotal = activeBatchLogs.filter(p => p.method === 'Cash').reduce((acc, p) => acc + (p.amountPaid || 0), 0);
+            const gcashTotal = activeBatchLogs.filter(p => p.method === 'GCash').reduce((acc, p) => acc + (p.amountPaid || 0), 0);
             const grandTotal = cashTotal + gcashTotal;
 
             document.getElementById('remit-cash-total').innerText = '₱' + cashTotal.toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -2090,42 +2244,114 @@ TacsFiber Management`;
             if(!tbody) return;
             tbody.innerHTML = '';
 
-            if(logsToday.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400 font-medium">Walang bagong naitalang koleksyon ngayong araw.</td></tr>`;
+            if(activeBatchLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 font-medium">Walang active collection sa kasalukuyang batch.</td></tr>`;
                 return;
             }
 
-            logsToday.forEach(p => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="py-2 px-3 font-bold text-slate-800">${p.subscriberName}</td>
-                        <td class="py-2 px-3 text-slate-600">${p.monthsPaid}</td>
-                        <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.method==='GCash'?'bg-blue-100 text-blue-700':'bg-emerald-100 text-emerald-700'}">${p.method}</span></td>
-                        <td class="py-2 px-3 text-right font-bold text-emerald-600">₱${(p.amountPaid||0).toLocaleString()}</td>
-                    </tr>
-                `;
+            tbody.innerHTML = activeBatchLogs.map(p => `
+                <tr>
+                    <td class="py-2.5 px-3 font-bold text-slate-800">${p.subscriberName}</td>
+                    <td class="py-2.5 px-3 text-slate-600">${p.monthsPaid}</td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.method==='GCash'?'bg-blue-100 text-blue-700':'bg-emerald-100 text-emerald-700'}">${p.method}</span></td>
+                    <td class="py-2.5 px-3 font-bold text-slate-700">${p.encodedBy}</td>
+                    <td class="py-2.5 px-3 text-right font-bold text-emerald-600">₱${(p.amountPaid||0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                </tr>
+            `).join('');
+        }
+
+        // FUNCTION PARA SA TURNOVER NG REMITTANCE
+        async function turnoverRemittanceToAdmin() {
+            const activeCollector = getActiveUser();
+            const currentRole = getActiveRole();
+            const today = new Date().toISOString().split('T')[0];
+            
+            const remitSelect = document.getElementById('remitCollectorSelect');
+            let targetCollector = ((currentRole === 'ADMIN' || currentRole === 'ASSISTANT_ADMIN') && remitSelect && remitSelect.value !== 'ALL') ? remitSelect.value : activeCollector;
+
+            const unsubmittedLogs = paymentLogs.filter(p => {
+                const isToday = p.date && p.date.startsWith(today);
+                const isCollector = ((currentRole === 'ADMIN' || currentRole === 'ASSISTANT_ADMIN') && remitSelect && remitSelect.value === 'ALL') ? true : ((p.encodedBy || '').toLowerCase() === targetCollector.toLowerCase());
+                return isToday && isCollector && !p.turnedOver;
             });
-        }
 
-        function unlockRemittanceForNewBatch() {
-            const today = new Date().toISOString().split('T')[0];
-            const currentUser = getActiveUser();
-            const userKey = `${today}_${currentUser}`;
-            remittanceTurnovers[userKey] = false;
-            saveData();
-        }
-
-        function confirmRemittanceTurnover() {
-            const today = new Date().toISOString().split('T')[0];
-            const currentUser = getActiveUser();
-            const userKey = `${today}_${currentUser}`;
-
-            if(confirm(`Sigurado ka bang ituturn-over na ang kasalukuyang koleksyon ngayong araw (${today}) kay Admin?`)) {
-                remittanceTurnovers[userKey] = true;
-                remittanceTurnovers[`${userKey}_time`] = Date.now();
-                saveData();
-                alert('Matagumpay na naisumite at na-clear ang Daily Remittance Turnover!');
+            if (unsubmittedLogs.length === 0) {
+                alert("⚠️ Walang active collection ngayong araw na kailangang i-turnover!");
+                return;
             }
+
+            const confirmAction = confirm(`Sigurado ka bang ituturn-over ang koleksyon${targetCollector !== 'ALL' ? ' para kay ' + targetCollector : ''}? Babalik sa ₱0.00 ang kasalukuyang talaan.`);
+            if (!confirmAction) return;
+
+            try {
+                const batchId = 'BATCH-' + Date.now();
+                const logIds = unsubmittedLogs.map(p => p.id);
+
+                const sb = getSupabase();
+                if (sb) {
+                    await sb.from('payment_logs').update({ turned_over: true, batch_id: batchId }).in('reference_no', logIds);
+                    await sb.from('payment_logs').update({ turned_over: true, batch_id: batchId }).in('id', logIds);
+                }
+
+                paymentLogs.forEach(p => {
+                    if (logIds.includes(p.id)) {
+                        p.turnedOver = true;
+                        p.batchId = batchId;
+                    }
+                });
+
+                let savedTurnovers = JSON.parse(localStorage.getItem('tacsfiber_turned_over_ids') || '[]');
+                localStorage.setItem('tacsfiber_turned_over_ids', JSON.stringify([...new Set([...savedTurnovers, ...logIds])]));
+
+                alert("🟢 Matagumpay na na-turnover ang koleksyon! Naka-reset na sa zero ang listahan at nailipat na sa Remittance History.");
+                
+                renderRemittanceTable();
+                renderRemittanceHistoryTable();
+
+            } catch (err) {
+                console.error("Turnover Error:", err);
+                alert("❌ Nagkaroon ng problema sa pag-turnover: " + err.message);
+            }
+        }
+
+        // RENDER REMITTANCE HISTORY
+        function renderRemittanceHistoryTable() {
+            const selectedDate = document.getElementById('history-date-filter') ? document.getElementById('history-date-filter').value : '';
+            const selectedCollector = document.getElementById('history-collector-select') ? document.getElementById('history-collector-select').value : 'ALL';
+
+            let historyLogs = paymentLogs.filter(p => p.turnedOver === true);
+
+            if (selectedDate) {
+                historyLogs = historyLogs.filter(p => p.date && p.date.startsWith(selectedDate));
+            }
+
+            if (selectedCollector !== 'ALL') {
+                historyLogs = historyLogs.filter(p => (p.encodedBy || '').toLowerCase() === selectedCollector.toLowerCase());
+            }
+
+            const tbody = document.getElementById('remittance-history-tbody');
+            if(!tbody) return;
+
+            if (historyLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">Walang natagpuang na-turnover na remittance sa napiling filter.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = historyLogs.map(p => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="py-2.5 px-3 font-mono font-bold text-indigo-600">${p.batchId || 'BATCH-OLD'}</td>
+                    <td class="py-2.5 px-3 font-bold text-slate-800">${p.subscriberName || 'N/A'}</td>
+                    <td class="py-2.5 px-3 text-slate-600">${p.monthsPaid || 'N/A'}</td>
+                    <td class="py-2.5 px-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${p.method === 'GCash' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}">
+                            ${p.method}
+                        </span>
+                    </td>
+                    <td class="py-2.5 px-3 text-slate-700">${p.encodedBy}</td>
+                    <td class="py-2.5 px-3 text-slate-500 font-mono">${p.date || 'N/A'}</td>
+                    <td class="py-2.5 px-3 text-right font-bold text-emerald-600">₱${parseFloat(p.amountPaid || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                </tr>
+            `).join('');
         }
 
         function openAssignModal(subId) {
@@ -2157,9 +2383,7 @@ TacsFiber Management`;
             if(sub) {
                 sub.assignedCollector = selectedCollector;
                 const sb = getSupabase();
-                if(sb) {
-                    await sb.from('subscribers').update({ assigned_collector: selectedCollector }).eq('id', subId);
-                }
+                if(sb) await sb.from('subscribers').update({ assigned_collector: selectedCollector }).eq('id', subId);
                 saveData();
                 closeAssignModal();
                 alert(`Nai-assign na si ${sub.name} kay ${selectedCollector}!`);
@@ -2168,11 +2392,8 @@ TacsFiber Management`;
 
         function openReceiptModalBySubId(subId) {
             const log = paymentLogs.find(p => p.subscriberId === subId);
-            if(log) {
-                openReceiptModal(log.id);
-            } else {
-                alert('Walang huling receipt na nahanap para sa kustomer na ito.');
-            }
+            if(log) openReceiptModal(log.id);
+            else alert('Walang huling receipt na nahanap para sa kustomer na ito.');
         }
 
         function openReceiptModal(payLogId) {
@@ -2208,24 +2429,24 @@ TacsFiber Management`;
             const modalBody = document.getElementById('cust-history-modal-body');
             modalBody.innerHTML = '';
             const logs = paymentLogs.filter(p => p.subscriberId === subId || p.subscriberName.toLowerCase() === sub.name.toLowerCase());
+            
             if(logs.length === 0) {
                 modalBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-slate-400">Walang pang naitalang bayad.</td></tr>`;
             } else {
-                logs.forEach(p => {
-                    modalBody.innerHTML += `
-                        <tr>
-                            <td class="p-2 font-mono">${p.date}</td>
-                            <td class="p-2 font-bold">${p.monthsPaid}</td>
-                            <td class="p-2">${p.method}</td>
-                            <td class="p-2 font-bold text-emerald-600">₱${p.amountPaid.toLocaleString()}</td>
-                            <td class="p-2">${p.encodedBy}</td>
-                            <td class="p-2 text-right">
-                                <button onclick="openReceiptModal('${p.id}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold cursor-pointer">
-                                    <i class="fa-solid fa-print"></i>
-                                </button>
-                            </td>
-                        </tr>`;
-                });
+                modalBody.innerHTML = logs.map(p => `
+                    <tr>
+                        <td class="p-2 font-mono">${p.date}</td>
+                        <td class="p-2 font-bold">${p.monthsPaid}</td>
+                        <td class="p-2">${p.method}</td>
+                        <td class="p-2 font-bold text-emerald-600">₱${p.amountPaid.toLocaleString()}</td>
+                        <td class="p-2">${p.encodedBy}</td>
+                        <td class="p-2 text-right">
+                            <button onclick="openReceiptModal('${p.id}')" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold cursor-pointer">
+                                <i class="fa-solid fa-print"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
             }
             document.getElementById('cust-history-modal').classList.remove('hidden');
             document.getElementById('cust-history-modal').classList.add('flex');
@@ -2243,9 +2464,7 @@ TacsFiber Management`;
             document.getElementById('modal-cust-name').innerText = `${sub.name} (${sub.barangay || 'Poblacion'})`;
             
             const monthlyRate = sub.monthlyPlan || 600;
-            document.getElementById('modal-cust-breakdown').innerHTML = `
-                <div class="flex justify-between"><span>Current Monthly Plan:</span><strong class="font-mono">₱${monthlyRate.toLocaleString()}</strong></div>
-            `;
+            document.getElementById('modal-cust-breakdown').innerHTML = `<div class="flex justify-between"><span>Current Monthly Plan:</span><strong class="font-mono">₱${monthlyRate.toLocaleString()}</strong></div>`;
 
             document.getElementById('modal-cust-balance').innerText = 'Total Amount Due: ₱' + (sub.balance || 0).toLocaleString();
             
@@ -2269,6 +2488,7 @@ TacsFiber Management`;
             const months = document.getElementById('pay-months').value.trim();
             const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
             const method = document.getElementById('pay-method').value;
+            const currentUser = getActiveUser();
 
             const sub = subscribers.find(s => s.id === id);
             let newBalance = sub ? Math.max(0, (sub.balance || 0) - amount) : 0;
@@ -2277,34 +2497,74 @@ TacsFiber Management`;
                 sub.lastBilledMonth = months;
             }
 
+            const payLogId = 'PAY-' + Date.now();
+            const subName = sub ? sub.name : 'Subscriber';
+
+            const newPaymentRecord = {
+                reference_no: payLogId,
+                account_no: id,
+                billing_id: months,
+                amount_paid: amount,
+                payment_method: method,
+                payment_date: payDate,
+                collected_by: currentUser
+            };
+
+            const newBillingRecord = {
+                account_no: id,
+                billing_month: months,
+                amount_due: amount,
+                due_date: payDate,
+                status: newBalance <= 0 ? 'PAID' : 'PARTIAL'
+            };
+
+            const newPaymentLogRecord = {
+                reference_no: payLogId,
+                subscriber_id: id,
+                subscriber_name: subName,
+                months_paid: months,
+                amount_paid: amount,
+                date: payDate,
+                method: method,
+                encoded_by: currentUser,
+                timestamp: Date.now(),
+                turned_over: false
+            };
+
+            const localLog = {
+                id: payLogId,
+                subscriberId: id,
+                subscriberName: subName,
+                monthsPaid: months,
+                amountPaid: amount,
+                date: payDate,
+                method: method,
+                encodedBy: currentUser,
+                timestamp: Date.now(),
+                turnedOver: false
+            };
+
+            paymentLogs.unshift(localLog);
+
+            const sb = getSupabase();
             try {
-                const sb = getSupabase();
                 if(sb) {
                     await sb.from('subscribers').update({ 
                         balance: newBalance,
                         last_billed_month: months
                     }).eq('id', id);
+
+                    await sb.from('payments').insert([newPaymentRecord]);
+                    await sb.from('billings').insert([newBillingRecord]);
+                    await sb.from('payment_logs').insert([newPaymentLogRecord]);
                 }
             } catch(err) {
-                console.log("Supabase balance update error:", err.message);
+                console.log("Supabase payment synchronization error:", err.message);
             }
 
-            const newPayLog = {
-                id: 'PAY-' + Date.now(),
-                subscriberId: id,
-                subscriberName: sub ? sub.name : 'Unknown',
-                monthsPaid: months,
-                amountPaid: amount,
-                date: payDate,
-                method: method,
-                encodedBy: getActiveUser(),
-                timestamp: Date.now()
-            };
-
-            paymentLogs.unshift(newPayLog);
-            saveData();
             closePaymentModal();
-            openReceiptModal(newPayLog.id);
+            refreshAllViewsUIOnly();
+            openReceiptModal(payLogId);
         }
 
         function openEditPaymentModal(payId) {
@@ -2330,49 +2590,63 @@ TacsFiber Management`;
             document.getElementById('edit-payment-modal').classList.add('hidden');
         }
 
-        function handleUpdatePayment(e) {
+        async function handleUpdatePayment(e) {
             e.preventDefault();
-            const payId = document.getElementById('edit-pay-id').value;
-            const payIndex = paymentLogs.findIndex(p => p.id === payId);
-            if(payIndex === -1) return;
-
-            const oldPay = paymentLogs[payIndex];
-            const newAmount = parseFloat(document.getElementById('edit-pay-amount').value) || 0;
-            const diff = newAmount - oldPay.amountPaid;
-
-            const sub = subscribers.find(s => s.id === oldPay.subscriberId || s.name.toLowerCase() === oldPay.subscriberName.toLowerCase());
-            if(sub) {
-                sub.balance = Math.max(0, (sub.balance || 0) - diff);
+            if(getActiveRole() !== 'ADMIN') {
+                alert('Bawal sa Assistant Admin ang mag-edit ng payment history!');
+                return;
             }
+            const payId = document.getElementById('edit-pay-id').value;
+            const pay = paymentLogs.find(p => p.id === payId);
+            if(!pay) return;
 
-            paymentLogs[payIndex] = {
-                ...oldPay,
-                date: document.getElementById('edit-pay-date').value,
-                monthsPaid: document.getElementById('edit-pay-months').value.trim(),
-                method: document.getElementById('edit-pay-method').value,
-                amountPaid: newAmount
+            const newAmount = parseFloat(document.getElementById('edit-pay-amount').value) || 0;
+            const diff = newAmount - pay.amountPaid;
+
+            const sub = subscribers.find(s => s.id === pay.subscriberId || s.name.toLowerCase() === pay.subscriberName.toLowerCase());
+            if(sub) sub.balance = Math.max(0, (sub.balance || 0) - diff);
+
+            const updatedData = {
+                payment_date: document.getElementById('edit-pay-date').value,
+                billing_id: document.getElementById('edit-pay-months').value.trim(),
+                payment_method: document.getElementById('edit-pay-method').value,
+                amount_paid: newAmount
             };
 
-            saveData();
+            const sb = getSupabase();
+            try {
+                if(sb) {
+                    await sb.from('payments').update(updatedData).eq('reference_no', payId);
+                    if(sub) await sb.from('subscribers').update({ balance: sub.balance }).eq('id', sub.id);
+                }
+            } catch(err) { console.log(err); }
+
             closeEditPaymentModal();
-            alert('Matagumpay na na-update ang payment record!');
+            await fetchSubscribersFromSupabase();
+            alert('Matagumpay na na-update ang payment record sa Supabase!');
         }
 
-        function deletePaymentRecord(payId) {
+        async function deletePaymentRecord(payId) {
             if(getActiveRole() !== 'ADMIN') {
                 alert('Tanging ADMIN lamang ang may kapangyarihang magbura ng payment record!');
                 return;
             }
-            if(confirm('Sigurado ka bang buburahin ang payment record na ito?')) {
+            if(confirm('Sigurado ka bang buburahin ang payment record na ito sa Supabase?')) {
                 const pay = paymentLogs.find(p => p.id === payId);
-                if(pay) {
-                    const sub = subscribers.find(s => s.id === pay.subscriberId || s.name.toLowerCase() === pay.subscriberName.toLowerCase());
-                    if(sub) {
-                        sub.balance = (sub.balance || 0) + pay.amountPaid;
+                const sub = pay ? subscribers.find(s => s.id === pay.subscriberId || s.name.toLowerCase() === pay.subscriberName.toLowerCase()) : null;
+                
+                if(sub && pay) sub.balance = (sub.balance || 0) + pay.amountPaid;
+
+                const sb = getSupabase();
+                try {
+                    if(sb) {
+                        await sb.from('payments').delete().eq('reference_no', payId);
+                        if(sub) await sb.from('subscribers').update({ balance: sub.balance }).eq('id', sub.id);
                     }
-                }
-                paymentLogs = paymentLogs.filter(p => p.id !== payId);
-                saveData();
+                } catch(err) { console.log(err); }
+
+                await fetchSubscribersFromSupabase();
+                alert('Matagumpay na nabura ang payment record.');
             }
         }
 
@@ -2402,16 +2676,57 @@ TacsFiber Management`;
             if(getActiveRole() === 'COLLECTOR') return;
             const tbody = document.getElementById('billing-records-table-body');
             if(!tbody) return;
-            tbody.innerHTML = subscribers.slice(0, 300).map(s => `
-                <tr class="border-b"><td class="py-2 px-3 font-mono font-bold">${s.id}</td><td class="py-2 px-3 font-bold">${s.name}</td><td class="py-2 px-3">${s.barangay || 'Poblacion'}</td><td class="py-2 px-3">${s.contact}</td><td class="py-2 px-3 font-bold text-rose-600">₱${(s.balance||0).toLocaleString()}</td></tr>
-            `).join('');
+
+            const searchInput = document.getElementById('billing-search-input');
+            const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            let filteredList = subscribers;
+            if(search) {
+                filteredList = subscribers.filter(s => 
+                    s.name.toLowerCase().includes(search) || 
+                    s.id.toLowerCase().includes(search) ||
+                    (s.barangay && s.barangay.toLowerCase().includes(search))
+                );
+            }
+
+            if(filteredList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400 font-medium">Walang nahanap na kustomer.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filteredList.slice(0, 300).map(s => {
+                const isPaid = (s.balance || 0) <= 0;
+                return `
+                    <tr class="border-b hover:bg-slate-50">
+                        <td class="py-2.5 px-3 font-mono font-bold text-indigo-600">${s.id}</td>
+                        <td class="py-2.5 px-3 font-bold text-slate-800">${s.name}</td>
+                        <td class="py-2.5 px-3 text-slate-600">${s.barangay || 'Poblacion'}</td>
+                        <td class="py-2.5 px-3 font-mono">${s.contact}</td>
+                        <td class="py-2.5 px-3 font-bold ${isPaid ? 'text-emerald-600' : 'text-rose-600'}">
+                            ₱${(s.balance || s.monthlyPlan || 600).toLocaleString()} 
+                            ${isPaid ? '<span class="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded ml-1 font-extrabold"><i class="fa-solid fa-circle-check mr-1"></i>PAID</span>' : '<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.5 rounded ml-1 font-extrabold">UNPAID</span>'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function renderPaymentHistoryTable() {
             if(getActiveRole() === 'COLLECTOR') return;
             const tbody = document.getElementById('payment-history-table-body');
+            const notice = document.getElementById('payment-history-notice');
             if(!tbody) return;
             const isAdmin = getActiveRole() === 'ADMIN';
+
+            if(notice) {
+                if(isAdmin) notice.innerText = 'Maaari kang mag-edit o magbura ng bayad bilang Admin.';
+                else notice.innerText = 'View Only: Tanging ang Admin lamang ang pwedeng mag-edit o magbura ng payment records.';
+            }
+
+            if(paymentLogs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400 font-medium">Walang nahanap na payment logs sa database.</td></tr>`;
+                return;
+            }
 
             tbody.innerHTML = paymentLogs.map(p => `
                 <tr class="border-b hover:bg-slate-50">
@@ -2438,15 +2753,9 @@ TacsFiber Management`;
             const dateTo = document.getElementById('auditDateTo') ? document.getElementById('auditDateTo').value : '';
 
             let filtered = paymentLogs;
-            if(encoderFilter !== 'ALL') {
-                filtered = filtered.filter(p => (p.encodedBy || 'System') === encoderFilter);
-            }
-            if(dateFrom) {
-                filtered = filtered.filter(p => p.date >= dateFrom);
-            }
-            if(dateTo) {
-                filtered = filtered.filter(p => p.date <= dateTo);
-            }
+            if(encoderFilter !== 'ALL') filtered = filtered.filter(p => (p.encodedBy || 'System') === encoderFilter);
+            if(dateFrom) filtered = filtered.filter(p => p.date >= dateFrom);
+            if(dateTo) filtered = filtered.filter(p => p.date <= dateTo);
             return filtered;
         }
 
@@ -2465,11 +2774,7 @@ TacsFiber Management`;
 
             if(exportContainer) {
                 if(role === 'ADMIN' || role === 'ASSISTANT_ADMIN') {
-                    exportContainer.innerHTML = `
-                        <button onclick="exportAuditReportCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-1.5 cursor-pointer">
-                            <i class="fa-solid fa-file-excel"></i><span>Export CSV / Excel</span>
-                        </button>
-                    `;
+                    exportContainer.innerHTML = `<button onclick="exportAuditReportCSV()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow transition flex items-center space-x-1.5 cursor-pointer"><i class="fa-solid fa-file-excel"></i><span>Export CSV / Excel</span></button>`;
                 } else {
                     exportContainer.innerHTML = '';
                 }
@@ -2480,18 +2785,16 @@ TacsFiber Management`;
                 return;
             }
 
-            filtered.forEach(p => {
-                tbody.innerHTML += `
-                    <tr class="hover:bg-slate-50 border-b">
-                        <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${p.date}</td>
-                        <td class="py-2.5 px-3 font-bold text-slate-800">${p.subscriberName}</td>
-                        <td class="py-2.5 px-3 font-medium text-slate-600">${p.monthsPaid || 'N/A'}</td>
-                        <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${p.method === 'GCash' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}">${p.method}</span></td>
-                        <td class="py-2.5 px-3 font-bold text-emerald-600">₱${(p.amountPaid || 0).toLocaleString()}</td>
-                        <td class="py-2.5 px-3 font-semibold text-slate-700"><i class="fa-solid fa-user-check text-amber-500 mr-1.5"></i>${p.encodedBy || 'System'}</td>
-                    </tr>
-                `;
-            });
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-slate-50 border-b">
+                    <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${p.date}</td>
+                    <td class="py-2.5 px-3 font-bold text-slate-800">${p.subscriberName}</td>
+                    <td class="py-2.5 px-3 font-medium text-slate-600">${p.monthsPaid || 'N/A'}</td>
+                    <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${p.method === 'GCash' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}">${p.method}</span></td>
+                    <td class="py-2.5 px-3 font-bold text-emerald-600">₱${(p.amountPaid || 0).toLocaleString()}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700"><i class="fa-solid fa-user-check text-amber-500 mr-1.5"></i>${p.encodedBy || 'System'}</td>
+                </tr>
+            `).join('');
         }
 
         function exportAuditReportCSV() {
@@ -2511,14 +2814,7 @@ TacsFiber Management`;
             csvContent += "Date Collected,Subscriber Name,Billing Month,Method,Amount,Collector/Encoder\r\n";
 
             filtered.forEach(p => {
-                const row = [
-                    `"${p.date}"`,
-                    `"${p.subscriberName}"`,
-                    `"${p.monthsPaid || ''}"`,
-                    `"${p.method}"`,
-                    p.amountPaid,
-                    `"${p.encodedBy || 'System'}"`
-                ];
+                const row = [`"${p.date}"`, `"${p.subscriberName}"`, `"${p.monthsPaid || ''}"`, `"${p.method}"`, p.amountPaid, `"${p.encodedBy || 'System'}"`];
                 csvContent += row.join(",") + "\r\n";
             });
 
@@ -2540,15 +2836,15 @@ TacsFiber Management`;
 
         function renderUsersTable() {
             const role = getActiveRole();
-            if(role === 'COLLECTOR') return;
+            if(role === 'COLLECTOR' || role === 'ASSISTANT_ADMIN') return;
             const tbody = document.getElementById('users-table-body');
             if(!tbody) return;
-            tbody.innerHTML = systemUsers.map((u, i) => `
+            tbody.innerHTML = systemUsers.map(u => `
                 <tr class="border-b">
                     <td class="py-3 px-4 font-bold">${u.username}</td>
                     <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-xs font-bold ${u.role==='ADMIN'?'bg-indigo-100 text-indigo-700':(u.role==='ASSISTANT_ADMIN'?'bg-blue-100 text-blue-700':'bg-emerald-100 text-emerald-700')}">${u.role.replace('_',' ')}</span></td>
                     <td class="py-3 px-4 text-right">
-                        ${role === 'ADMIN' && u.username !== 'Ronel Tacocong' ? `<button onclick="deleteUser(${i})" class="bg-rose-600 text-white px-2 py-1 rounded text-xs cursor-pointer">Delete</button>` : '<span class="text-xs text-slate-400">Protected</span>'}
+                        ${role === 'ADMIN' && u.username !== 'Ronel Tacocong' ? `<button onclick="deleteUser('${u.username}')" class="bg-rose-600 text-white px-2 py-1 rounded text-xs cursor-pointer">Delete</button>` : '<span class="text-xs text-slate-400">Protected</span>'}
                     </td>
                 </tr>
             `).join('');
@@ -2568,25 +2864,48 @@ TacsFiber Management`;
             document.getElementById('add-user-modal').classList.add('hidden');
         }
 
-        function handleSaveUser(e) {
+        async function handleSaveUser(e) {
             e.preventDefault();
             const username = document.getElementById('new-user-name').value.trim();
             const pass = document.getElementById('new-user-pass').value.trim();
             const role = document.getElementById('new-user-role').value;
-            systemUsers.push({ username, pass, role });
-            saveData();
+
+            const sb = getSupabase();
+            try {
+                if(sb) {
+                    const { error } = await sb.from('system_users').insert([{ username: username, pass: pass, role: role }]);
+                    if(error) throw error;
+                }
+            } catch(err) {
+                alert("Error sa pag-save ng user sa Supabase: " + err.message);
+                return;
+            }
+
             closeAddUserModal();
-            alert(`Nai-dagdag na si ${username}!`);
+            await fetchSubscribersFromSupabase();
+            refreshAllViewsUIOnly();
+            alert(`Matagumpay na naidaragdag sa Supabase ang user na si ${username}!`);
         }
 
-        function deleteUser(i) {
+        async function deleteUser(username) {
             if(getActiveRole() !== 'ADMIN') {
                 alert('Tanging FULL ADMIN lamang ang may permiso na magbura ng user account!');
                 return;
             }
-            if(confirm('Sigurado ka bang buburahin ang user na ito?')) {
-                systemUsers.splice(i, 1);
-                saveData();
+            if(confirm(`Sigurado ka bang buburahin ang user na ${username} sa Supabase?`)) {
+                const sb = getSupabase();
+                try {
+                    if(sb) {
+                        const { error } = await sb.from('system_users').delete().eq('username', username);
+                        if(error) throw error;
+                    }
+                } catch(err) {
+                    alert("Error sa pagbura sa Supabase: " + err.message);
+                    return;
+                }
+                await fetchSubscribersFromSupabase();
+                refreshAllViewsUIOnly();
+                alert('Matagumpay na nabura ang user.');
             }
         }
 
@@ -2601,7 +2920,9 @@ TacsFiber Management`;
 
         function togglePassword() {
             const p = document.getElementById('login-pass');
-            p.type = p.type === 'password' ? 'text' : 'password';
+            if (p) {
+                p.type = p.type === 'password' ? 'text' : 'password';
+            }
         }
     </script>
 </body>
