@@ -39,7 +39,78 @@
         .sticky-col-1 { position: sticky; left: 0; z-index: 10; width: 110px; min-width: 110px; }
         .sticky-col-2 { position: sticky; left: 110px; z-index: 10; width: 220px; min-width: 220px; }
         thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
+thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
 
+    /* --- ILAGAY DITO ANG MOBILE RESPONSIVE CSS --- */
+    @media (max-width: 768px) {
+        header .max-w-7xl {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.5rem;
+        }
+        header .flex.items-center.space-x-3 {
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        #nav-tabs-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-bottom: 0.5rem;
+            -webkit-overflow-scrolling: touch;
+        }
+        #nav-tabs-container button {
+            display: inline-flex;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
+        }
+        input, select, button, textarea {
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .flex, .grid {
+            flex-wrap: wrap;
+        }
+        table, thead, tbody, th, td, tr {
+            display: block;
+        }
+        thead tr {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+        }
+        tr {
+            margin-bottom: 1rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        td {
+            position: relative;
+            padding: 0.5rem 0.25rem !important;
+            text-align: right !important;
+            border: none !important;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        td:last-child {
+            border-bottom: none;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding-top: 0.75rem !important;
+        }
+        .sticky-col-1, .sticky-col-2 {
+            position: static !important;
+            width: auto !important;
+            min-width: 0 !important;
+        }
+    }
+    /* --------------------------------------------- */
+
+    .app-window-maximized {
         .app-window-maximized {
             width: 100vw !important;
             max-width: 100vw !important;
