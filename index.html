@@ -331,6 +331,9 @@
                             </h3>
                             <p class="text-xs text-slate-500">ID at Date ay awtomatikong ginagawa ng sistema. Ang Note at Technician Name ay fi-fill up ng Technician.</p>
                         </div>
+                        <button onclick="exportBulkInstallationNotepad()" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow cursor-pointer transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-arrow-down"></i><span>Export Bulk List (.txt)</span>
+                        </button>
                     </div>
 
                     <div class="flex items-center space-x-2 border-b border-slate-200 pb-3">
@@ -1836,6 +1839,16 @@
 
             renderNavigationTabs();
 
+            // Feature 3: Apply restrictions for assistant admin on Add Customer and Edit forms
+            if(currentRole === 'ASSISTANT_ADMIN') {
+                const addBalField = document.getElementById('cust-balance');
+                if(addBalField) {
+                    addBalField.value = '600';
+                    addBalField.readOnly = true;
+                    addBalField.classList.add('bg-slate-200', 'cursor-not-allowed');
+                }
+            }
+
             if(currentRole === 'COLLECTOR') {
                 switchTab('collection-list');
             } else if(currentRole === 'TECHNICIAN') {
@@ -2136,6 +2149,29 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // Feature 2: Export Bulk Installation List in Notepad format (.txt)
+        function exportBulkInstallationNotepad() {
+            const today = new Date().toISOString().split('T')[0];
+            const activeList = internetInstallations.filter(i => i.status === currentInstallationSubTab);
+
+            let content = `INTERNET INSTALLATION LIST (${currentInstallationSubTab === 'PENDING' ? 'ACTIVE QUEUE' : 'INSTALLED HISTORY'})\nDATE: ${today}\n\n`;
+
+            if(activeList.length === 0) {
+                alert('Walang mga installation tasks na ma-export sa kasalukuyang view.');
+                return;
+            }
+
+            activeList.forEach((i, idx) => {
+                content += `${idx + 1}. ID: ${i.id}\nDate: ${i.date}\nCustomer Name: ${i.name}\nContact: ${i.contact}\nAddress: ${i.address}\nMonthly Plan: ₱${i.monthlyPlan}\nTechnician: ${i.technician || 'N/A'}\nNote: ${i.note || 'N/A'}\nStatus: ${i.status}\n\n`;
+            });
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Internet_Installation_${currentInstallationSubTab}_${today}.txt`;
+            link.click();
         }
 
         function updateInstallationNote(id, val) {
@@ -2627,6 +2663,7 @@ TacsFiber Team and Management`;
             switchComplainTab('PENDING');
         }
 
+        // Feature 1: Clean and structured Font Style / Layout for Tab Customers Complain
         function renderCustomersComplainView() {
             const container = document.getElementById('complain-cards-container');
             const areaFilter = document.getElementById('complain-brgy-filter') ? document.getElementById('complain-brgy-filter').value : 'ALL';
@@ -2667,51 +2704,68 @@ TacsFiber Team and Management`;
                 const isResolved = c.status === 'RESOLVED';
 
                 return `
-                    <div class="p-4 rounded-xl border ${isResolved ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200'} shadow-sm space-y-3 transition duration-200">
-                        <div class="flex justify-between items-start">
-                            <div class="text-xs font-bold text-slate-700 flex flex-wrap items-center gap-2">
-                                <span>Account: <strong class="font-mono text-purple-600">${c.id}</strong> (Auto)</span>
-                                <span>|</span>
-                                <span>Date: <strong class="text-slate-600">${c.date}</strong> (Auto)</span>
-                                ${isResolved ? `<span class="text-[10px] text-slate-400 font-normal"><i class="fa-solid fa-calendar-check text-emerald-600 ml-1 mr-0.5"></i>Fixed: ${c.resolvedDate || c.date}</span>` : ''}
+                    <div class="p-5 rounded-xl border ${isResolved ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white border-slate-200'} shadow-sm space-y-4 transition duration-200">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+                            <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+                                <span class="bg-purple-100 text-purple-800 font-bold px-2.5 py-1 rounded-lg">Account: ${c.id} (Auto)</span>
+                                <span class="bg-slate-100 text-slate-700 font-semibold px-2.5 py-1 rounded-lg">Date: ${c.date} (Auto)</span>
+                                ${isResolved ? `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg"><i class="fa-solid fa-calendar-check mr-1"></i>Fixed: ${c.resolvedDate || c.date}</span>` : ''}
                             </div>
                             <div class="flex items-center space-x-2">
-                                <span class="px-2.5 py-1 rounded-md text-[10px] font-extrabold shadow-sm ${isResolved ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'}">
-                                    <i class="fa-solid ${isResolved ? 'fa-check-circle mr-1' : 'fa-wrench mr-1'}">​${c.status}</span>
+                                <span class="px-3 py-1 rounded-lg text-xs font-black shadow-sm ${isResolved ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'}">
+                                    ${c.status}
                                 </span>
-                                <button onclick="exportSingleComplainNotepad(${originalIndex})" class="bg-slate-800 hover:bg-slate-900 text-white px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer transition shadow" title="Export to Notepad">
-                                    <i class="fa-solid fa-file-arrow-down"></i>
+                                <button onclick="exportSingleComplainNotepad(${originalIndex})" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition shadow" title="Export to Notepad">
+                                    <i class="fa-solid fa-file-arrow-down mr-1"></i>Export .txt
                                 </button>
-                                ${role !== 'TECHNICIAN' ? `<button onclick="deleteComplain(${originalIndex})" class="text-rose-500 hover:text-rose-700 px-1 text-xs cursor-pointer"><i class="fa-solid fa-trash"></i></button>` : ''}
+                                ${role !== 'TECHNICIAN' ? `<button onclick="deleteComplain(${originalIndex})" class="text-rose-500 hover:text-rose-700 p-1.5 text-xs cursor-pointer"><i class="fa-solid fa-trash"></i></button>` : ''}
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                            <div><strong>Area:</strong> <span class="text-indigo-600 font-bold">${c.barangay}</span></div>
-                            <div><strong>Customer Name:</strong> ${c.name}</div>
-                            <div><strong>Contact Number:</strong> <span class="font-mono font-bold text-slate-800">${c.contact}</span></div>
-                            <div><strong>Address:</strong> ${c.address}</div>
-                            <div><strong>Landmark:</strong> ${c.landmark}</div>
-                            <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50/40 p-3 rounded-lg border border-purple-200">
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Technician (Fi-fill up ng Tech):</label>
-                                    <input type="text" value="${c.technician || ''}" onchange="updateComplainTechnician(${originalIndex}, this.value)" placeholder="Pangalan ng Technician..." class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs font-bold text-purple-700">
-                                </div>
-                                <div>
-                                    <label class="block text-[11px] font-bold text-slate-700 mb-1">Note (Fi-fill up ng Tech):</label>
-                                    <input type="text" value="${c.note || ''}" onchange="updateComplainNote(${originalIndex}, this.value)" placeholder="Uri ng problema o solusyon..." class="w-full bg-white border border-slate-300 rounded px-2.5 py-1 text-xs">
-                                </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-medium">
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <span class="block text-[10px] uppercase font-bold text-slate-400">Area / Barangay</span>
+                                <strong class="text-slate-800 text-sm">${c.barangay}</strong>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <span class="block text-[10px] uppercase font-bold text-slate-400">Customer Name</span>
+                                <strong class="text-slate-800 text-sm">${c.name}</strong>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <span class="block text-[10px] uppercase font-bold text-slate-400">Contact Number</span>
+                                <strong class="text-indigo-600 font-mono text-sm">${c.contact}</strong>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <span class="block text-[10px] uppercase font-bold text-slate-400">Address</span>
+                                <span class="text-slate-700">${c.address}</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 sm:col-span-2">
+                                <span class="block text-[10px] uppercase font-bold text-slate-400">Landmark</span>
+                                <span class="text-slate-700">${c.landmark}</span>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center pt-2 border-t">
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50/60 p-3.5 rounded-xl border border-purple-200 text-xs">
+                            <div>
+                                <label class="block font-bold text-purple-900 mb-1">Technician (Fi-fill up ng Tech):</label>
+                                <input type="text" value="${c.technician || ''}" onchange="updateComplainTechnician(${originalIndex}, this.value)" placeholder="Pangalan ng Technician..." class="w-full bg-white border border-purple-300 rounded-lg px-3 py-2 font-bold text-purple-700 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-purple-900 mb-1">Note (Fi-fill up ng Tech):</label>
+                                <input type="text" value="${c.note || ''}" onchange="updateComplainNote(${originalIndex}, this.value)" placeholder="Walang internet / Connection issue..." class="w-full bg-white border border-purple-300 rounded-lg px-3 py-2 font-medium text-slate-800 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-100">
                             <span class="text-[10px] text-slate-400 font-mono">System Generated ID & Date</span>
                             <div class="flex items-center space-x-2">
                                 ${isResolved ? `
-                                    <button onclick="sendResolvedSMS('${c.name}', '${c.contact}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow cursor-pointer flex items-center space-x-1">
-                                        <i class="fa-solid fa-paper-plane"></i><span>Notify SMS / Messenger</span>
+                                    <button onclick="sendResolvedSMS('${c.name}', '${c.contact}')" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition shadow cursor-pointer flex items-center space-x-1">
+                                        <i class="fa-solid fa-paper-plane mr-1"></i><span>Notify SMS / Messenger</span>
                                     </button>
                                 ` : ''}
-                                <button onclick="toggleComplainStatus(${originalIndex})" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition shadow cursor-pointer flex items-center space-x-1.5 ${isResolved ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}">
-                                    <i class="fa-solid ${isResolved ? 'fa-rotate-left' : 'fa-check'}"></i>
+                                <button onclick="toggleComplainStatus(${originalIndex})" class="px-4 py-2 rounded-xl text-xs font-black transition shadow cursor-pointer flex items-center space-x-1.5 ${isResolved ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}">
+                                    <i class="fa-solid ${isResolved ? 'fa-rotate-left mr-1' : 'fa-check mr-1'}"></i>
                                     <span>${isResolved ? 'Reopen / Mark as Pending' : 'Mark as Fixed / Resolve'}</span>
                                 </button>
                             </div>
@@ -3313,9 +3367,16 @@ TacsFiber Team and Management`;
 
         async function handleSaveCustomer(e) {
             e.preventDefault();
+            const role = getActiveRole();
+            
+            // Feature 3: Prevent Assistant Admin from modifying/inputting starting balance
+            let balance = 600;
+            if(role === 'ADMIN') {
+                balance = parseFloat(document.getElementById('cust-balance').value) || 600;
+            }
+
             const name = document.getElementById('cust-name').value.trim();
             const monthlyPlan = parseFloat(document.getElementById('cust-monthly-plan').value) || 600;
-            const balance = parseFloat(document.getElementById('cust-balance').value) || 600;
             const newSubId = document.getElementById('cust-acc-no').value;
 
             const newSubObj = {
@@ -3368,6 +3429,8 @@ TacsFiber Team and Management`;
             const sub = subscribers.find(s => s.id === subId);
             if(!sub) return;
 
+            const role = getActiveRole();
+
             document.getElementById('edit-cust-id').value = sub.id;
             document.getElementById('edit-cust-name').value = sub.name;
             document.getElementById('edit-cust-barangay').value = sub.barangay || 'Poblacion';
@@ -3375,7 +3438,18 @@ TacsFiber Team and Management`;
             document.getElementById('edit-cust-contact').value = sub.contact || '';
             document.getElementById('edit-cust-monthly-plan').value = sub.monthlyPlan || 600;
             document.getElementById('edit-cust-dueday').value = sub.dueDay || 19;
-            document.getElementById('edit-cust-balance').value = sub.balance || 0;
+            
+            const balInput = document.getElementById('edit-cust-balance');
+            balInput.value = sub.balance || 0;
+
+            // Feature 4: Restrict Assistant Admin from editing the Balance
+            if(role === 'ASSISTANT_ADMIN') {
+                balInput.readOnly = true;
+                balInput.classList.add('bg-slate-200', 'cursor-not-allowed');
+            } else {
+                balInput.readOnly = false;
+                balInput.classList.remove('bg-slate-200', 'cursor-not-allowed');
+            }
 
             document.getElementById('edit-customer-modal').classList.remove('hidden');
             document.getElementById('edit-customer-modal').classList.add('flex');
@@ -3389,6 +3463,8 @@ TacsFiber Team and Management`;
         async function handleUpdateCustomer(e) {
             e.preventDefault();
             const id = document.getElementById('edit-cust-id').value;
+            const role = getActiveRole();
+            const sub = subscribers.find(s => s.id === id);
 
             let updatedData = {
                 name: document.getElementById('edit-cust-name').value.trim(),
@@ -3397,10 +3473,9 @@ TacsFiber Team and Management`;
                 contact: document.getElementById('edit-cust-contact').value.trim(),
                 monthly_plan: parseFloat(document.getElementById('edit-cust-monthly-plan').value) || 600,
                 due_day: parseInt(document.getElementById('edit-cust-dueday').value, 10) || 19,
-                balance: parseFloat(document.getElementById('edit-cust-balance').value) || 0
+                balance: role === 'ASSISTANT_ADMIN' ? (sub ? sub.balance : 0) : (parseFloat(document.getElementById('edit-cust-balance').value) || 0)
             };
 
-            const sub = subscribers.find(s => s.id === id);
             if(sub) {
                 sub.name = updatedData.name;
                 sub.barangay = updatedData.barangay;
