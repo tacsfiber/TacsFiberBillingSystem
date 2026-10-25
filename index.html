@@ -41,88 +41,22 @@
         .sticky-col-1 { position: sticky; left: 0; z-index: 10; width: 110px; min-width: 110px; }
         .sticky-col-2 { position: sticky; left: 110px; z-index: 10; width: 220px; min-width: 220px; }
         thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
-thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
 
-    /* --- ILAGAY DITO ANG MOBILE RESPONSIVE CSS --- */
-    @media (max-width: 768px) {
-        header .max-w-7xl {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 0.5rem;
+        @media (max-width: 768px) {
+            header .max-w-7xl { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+            header .flex.items-center.space-x-3 { justify-content: space-between; flex-wrap: wrap; }
+            #nav-tabs-container { overflow-x: auto; white-space: nowrap; padding-bottom: 0.5rem; -webkit-overflow-scrolling: touch; }
+            #nav-tabs-container button { display: inline-flex; flex-shrink: 0; margin-right: 0.5rem; }
+            input, select, button, textarea { max-width: 100% !important; box-sizing: border-box !important; }
+            .flex, .grid { flex-wrap: wrap; }
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { margin-bottom: 1rem; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+            td { position: relative; padding: 0.5rem 0.25rem !important; text-align: right !important; border: none !important; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+            td:last-child { border-bottom: none; justify-content: flex-end; gap: 0.5rem; padding-top: 0.75rem !important; }
+            .sticky-col-1, .sticky-col-2 { position: static !important; width: auto !important; min-width: 0 !important; }
         }
-        header .flex.items-center.space-x-3 {
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        #nav-tabs-container {
-            overflow-x: auto;
-            white-space: nowrap;
-            padding-bottom: 0.5rem;
-            -webkit-overflow-scrolling: touch;
-        }
-        #nav-tabs-container button {
-            display: inline-flex;
-            flex-shrink: 0;
-            margin-right: 0.5rem;
-        }
-        input, select, button, textarea {
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-        }
-        .flex, .grid {
-            flex-wrap: wrap;
-        }
-        table, thead, tbody, th, td, tr {
-            display: block;
-        }
-        thead tr {
-            position: absolute;
-            top: -9999px;
-            left: -9999px;
-        }
-        tr {
-            margin-bottom: 1rem;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1rem;
-            padding: 0.75rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        td {
-            position: relative;
-            padding: 0.5rem 0.25rem !important;
-            text-align: right !important;
-            border: none !important;
-            border-bottom: 1px solid #f1f5f9;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        td:last-child {
-            border-bottom: none;
-            justify-content: flex-end;
-            gap: 0.5rem;
-            padding-top: 0.75rem !important;
-        }
-        .sticky-col-1, .sticky-col-2 {
-            position: static !important;
-            width: auto !important;
-            min-width: 0 !important;
-        }
-    }
-    /* --------------------------------------------- */
-
-    .app-window-maximized {
-        .app-window-maximized {
-            width: 100vw !important;
-            max-width: 100vw !important;
-            min-height: 100vh !important;
-            border-radius: 0 !important;
-            margin: 0 !important;
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
-        }
-
+        .app-window-maximized { width: 100vw !important; max-width: 100vw !important; min-height: 100vh !important; border-radius: 0 !important; margin: 0 !important; padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
         @media print {
             body * { visibility: hidden; }
             #receipt-print-area, #receipt-print-area * { visibility: visible; }
@@ -247,8 +181,7 @@ thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
             </p>
         </div>
     </div>
-
-    <!-- MAIN APP CONTAINER -->
+<!-- MAIN APP CONTAINER -->
     <div id="app-container" class="h-full flex flex-col hidden bg-gray-50">
         <header class="bg-black text-white shadow-xl z-30 shrink-0 sticky top-0 border-b border-red-950/60">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
@@ -591,8 +524,7 @@ thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
                     </div>
                 </div>
             </div>
-
-            <!-- VIEW: TECHNICIAN PERFORMANCE ANALYTICS -->
+<!-- VIEW: TECHNICIAN PERFORMANCE ANALYTICS -->
             <div id="view-technician-analytics" class="hidden space-y-6 max-w-4xl mx-auto">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
@@ -1554,8 +1486,7 @@ thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
             </form>
         </div>
     </div>
-
-    <!-- SYSTEM CORE SCRIPT -->
+<!-- SYSTEM CORE SCRIPT -->
     <script>
         const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
@@ -1616,7 +1547,47 @@ thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
             }
         }
 
-        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('online', async () => {
+            updateOnlineStatus();
+            let queue = JSON.parse(localStorage.getItem('tacsfiber_offline_queue')) || [];
+            if (queue.length > 0) {
+                const sb = getSupabase();
+                if (sb) {
+                    try {
+                        for (let item of queue) {
+                            await sb.from('payment_logs').insert([{
+                                reference_no: item.id,
+                                subscriber_id: item.subscriberId,
+                                subscriber_name: item.subscriberName,
+                                months_paid: item.monthsPaid,
+                                amount_paid: item.amountPaid,
+                                payment_method: item.method,
+                                payment_date: item.date,
+                                collected_by: item.encodedBy,
+                                timestamp: item.timestamp,
+                                turned_over: false
+                            }]);
+                            await sb.from('payments').insert([{
+                                reference_no: item.id,
+                                account_no: item.subscriberId,
+                                subscriber_name: item.subscriberName,
+                                billing_id: item.monthsPaid,
+                                amount_paid: item.amountPaid,
+                                payment_method: item.method,
+                                payment_date: item.date,
+                                collected_by: item.encodedBy
+                            }]);
+                        }
+                        localStorage.removeItem('tacsfiber_offline_queue');
+                        pendingOfflineQueue = [];
+                        console.log("🟢 Na-sync na ang mga offline payment records sa Supabase!");
+                    } catch(e) {
+                        console.error("Auto-sync failed:", e);
+                    }
+                }
+            }
+        });
+
         window.addEventListener('offline', updateOnlineStatus);
 
         function updateOnlineStatus() {
@@ -1912,7 +1883,6 @@ thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
 
             renderNavigationTabs();
 
-            // Feature 3: Apply restrictions for assistant admin on Add Customer and Edit forms
             if(currentRole === 'ASSISTANT_ADMIN') {
                 const addBalField = document.getElementById('cust-balance');
                 if(addBalField) {
@@ -2224,7 +2194,6 @@ thead .sticky-col-1, thead .sticky-col-2 { z-index: 30; }
             `).join('');
         }
 
-        // Feature 2: Export Bulk Installation List in Notepad format (.txt)
         function exportBulkInstallationNotepad() {
             const today = new Date().toISOString().split('T')[0];
             const activeList = internetInstallations.filter(i => i.status === currentInstallationSubTab);
@@ -2736,7 +2705,6 @@ TacsFiber Team and Management`;
             switchComplainTab('PENDING');
         }
 
-        // Feature 1: Clean and structured Font Style / Layout for Tab Customers Complain
         function renderCustomersComplainView() {
             const container = document.getElementById('complain-cards-container');
             const areaFilter = document.getElementById('complain-brgy-filter') ? document.getElementById('complain-brgy-filter').value : 'ALL';
@@ -3442,7 +3410,6 @@ TacsFiber Team and Management`;
             e.preventDefault();
             const role = getActiveRole();
             
-            // Feature 3: Prevent Assistant Admin from modifying/inputting starting balance
             let balance = 600;
             if(role === 'ADMIN') {
                 balance = parseFloat(document.getElementById('cust-balance').value) || 600;
@@ -3515,7 +3482,6 @@ TacsFiber Team and Management`;
             const balInput = document.getElementById('edit-cust-balance');
             balInput.value = sub.balance || 0;
 
-            // Feature 4: Restrict Assistant Admin from editing the Balance
             if(role === 'ASSISTANT_ADMIN') {
                 balInput.readOnly = true;
                 balInput.classList.add('bg-slate-200', 'cursor-not-allowed');
@@ -3897,6 +3863,7 @@ TacsFiber Team and Management`;
             document.getElementById('payment-modal').classList.add('hidden');
         }
 
+        // ================= UPDATED SUBMIT PAYMENT FUNCTION (OFFLINE BACKUP & TRY-CATCH) =================
         async function submitPayment(e) {
             e.preventDefault();
             const id = document.getElementById('pay-sub-id').value;
@@ -3936,9 +3903,13 @@ TacsFiber Team and Management`;
                 turnedOver: false
             };
 
+            // 1. Unang i-save sa local storage para HINDI MAWALA kahit mawalan ng net
             paymentLogs.unshift(localLog);
             savePaymentLogsLocal();
 
+            let isSyncedToCloud = false;
+
+            // 2. Subukang i-save sa Supabase (May try-catch fallback)
             try {
                 const sb = getSupabase();
                 if(sb) {
@@ -3965,15 +3936,23 @@ TacsFiber Team and Management`;
                         timestamp: Date.now(),
                         turned_over: false
                     }]);
+                    isSyncedToCloud = true;
                 }
             } catch(err) {
-                console.error("Error saving payment to Supabase:", err);
+                console.warn("⚠️ May aberya sa Supabase connection. Naka-save muna sa offline queue:", err);
+                pendingOfflineQueue.push(localLog);
+                localStorage.setItem('tacsfiber_offline_queue', JSON.stringify(pendingOfflineQueue));
             }
 
             closePaymentModal();
             refreshAllViewsUIOnly();
             openReceiptModal(payLogId);
-            alert(`✅ Matagumpay na na-record ang bayad na ₱${amount.toLocaleString()} para kay ${sub ? sub.name : 'Customer'}!`);
+
+            if(isSyncedToCloud) {
+                alert(`✅ Matagumpay na na-record at na-sync sa Supabase ang bayad na ₱${amount.toLocaleString()} para kay ${sub ? sub.name : 'Customer'}!`);
+            } else {
+                alert(`⚠️ NOTE (Offline Mode): LIGTAS na naka-save sa Local Storage ang bayad na ₱${amount.toLocaleString()} ni ${sub ? sub.name : 'Customer'}! Mag-a-auto sync ito sa Supabase kapag bumalik na ang internet.`);
+            }
         }
 
         function renderAuditTable() {
