@@ -1816,7 +1816,13 @@ async function checkAndApplyMonthlyBilling() {
     if (typeof subscribers !== 'undefined' && subscribers.length > 0) {
         for (let sub of subscribers) {
             // Kung active ang kustomer, sumapit na ang due date, at hindi pa na-bill ngayong buwan
-            if ((sub.status || 'ACTIVE') === 'ACTIVE' && sub.dueDay <= currentDay && sub.lastBilledMonth !== currentMonthYear) {
+            // Kunin ang due day ng kustomer (default sa 19 kung walang nakalagay)
+            const due = sub.dueDay || 19;
+            
+            // Susuriin kung active, umabot na sa due day (o mas maaga kung gustong isama sa billing cycle), at hindi pa na-bill ngayong buwan
+            const isDueTodayOrPast = due <= currentDay; 
+            
+            if ((sub.status || 'ACTIVE') === 'ACTIVE' && isDueTodayOrPast && sub.lastBilledMonth !== currentMonthYear) {
                 const planAmount = parseFloat(sub.monthlyPlan) || 600;
                 sub.balance = (parseFloat(sub.balance) || 0) + planAmount;
                 sub.lastBilledMonth = currentMonthYear;
@@ -1824,7 +1830,7 @@ async function checkAndApplyMonthlyBilling() {
 
                 // I-sync sa Supabase Cloud database
                 try {
-                    const sb = getPag(); // o getSupabase() depende sa tawag mo
+                    const sb = getPag(); 
                     if (typeof getSupabase === 'function' && getSupabase()) {
                         await getSupabase().from('subscribers').update({
                             balance: sub.balance,
@@ -1832,7 +1838,7 @@ async function checkAndApplyMonthlyBilling() {
                         }).eq('id', sub.id);
                     }
                 } catch (e) {
-                    console.error(`Failed to auto-update billing for subscriber ${sub.id}:`, e);
+                    console.error('Error syncing monthly billing:', e);
                 }
             }
         }
