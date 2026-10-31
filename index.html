@@ -1830,7 +1830,6 @@ async function checkAndApplyMonthlyBilling() {
 
                 // I-sync sa Supabase Cloud database
                 try {
-                    const sb = getPag(); 
                     if (typeof getSupabase === 'function' && getSupabase()) {
                         await getSupabase().from('subscribers').update({
                             balance: sub.balance,
@@ -3354,7 +3353,28 @@ TacsFiber Team and Management`;
             if(dueDayFilter !== 'ALL') list = list.filter(s => String(s.dueDay || 19) === String(dueDayFilter));
 
             // Suriin ang due date para sa bawat kategorya
-            const overdueList = list.filter(s => (s.dueDay || 19) < currentDay && (s.balance || 0) > 0);
+            const overdueList = list.filter(s => {
+    const balance = s.balance || 0;
+    if (balance <= 0) return false;
+
+    // Gamitin ang date_installed para sa mathematical calculation ng due date
+    if (s.date_installed || s.dateInstalled) {
+        const installDateStr = s.date_installed || s.dateInstalled;
+        const installDate = new Date(installDateStr);
+        const today = new Date();
+        
+        // Kunin ang bilang ng araw mula nang ma-install (diffInDays)
+        const diffTime = today - installDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        // Overdue kung mahigit 30 araw na mula installation/cycle at may unpaid balance pa
+        return diffDays > 30;
+    }
+
+    // Fallback kung blangko ang date_installed
+    const due = s.dueDay || 19;
+    return due < currentDay;
+});
             const dueTodayList = list.filter(s => (s.dueDay || 19) === currentDay);
             const comingDueList = list.filter(s => {
                 const due = s.dueDay || 19;
@@ -3511,8 +3531,20 @@ TacsFiber Team and Management`;
             document.getElementById('stat-total').innerText = subscribers.length;
             document.getElementById('stat-active').innerText = subscribers.filter(s => (s.status || 'ACTIVE') === 'ACTIVE').length;
             document.getElementById('stat-suspended').innerText = subscribers.filter(s => (s.status || 'ACTIVE') === 'DISCONNECTED').length;
-            document.getElementById('stat-overdue').innerText = subscribers.filter(s => (s.balance || 0) > 0 && (s.dueDay || 19) < currentDay).length;
-            document.getElementById('stat-revenue').innerText = '₱' + subscribers.reduce((acc, s) => acc + (s.monthlyPlan || 0), 0).toLocaleString();
+document.getElementById('stat-overdue').innerText = subscribers.filter(s => {
+        const balance = s.balance || 0;
+        if (balance <= 0) return false;
+        if (s.date_installed || s.dateInstalled) {
+            const installDate = new Date(s.date_installed || s.dateInstalled);
+            const today = new Date();
+            const diffTime = today - installDate;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            return diffDays > 30;
+        }
+        const due = s.dueDay || 19;
+        return due < currentDay;
+    }).length;            
+        document.getElementById('stat-revenue').innerText = '₱' + subscribers.reduce((acc, s) => acc + (s.monthlyPlan || 0), 0).toLocaleString();
             
             renderTechnicianAnalytics();
         }
