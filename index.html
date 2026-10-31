@@ -3352,6 +3352,9 @@ TacsFiber Team and Management`;
             const dueTodayList = list.filter(s => (s.dueDay || 19) === currentDay);
             const comingDueList = list.filter(s => {
                 const due = s.dueDay || 19;
+                if (currentDay >= 28) {
+                    return due >= 1 && due <= 3;
+                }
                 return due > currentDay && due <= currentDay + 3;
             });
 
