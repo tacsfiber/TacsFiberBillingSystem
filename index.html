@@ -1866,7 +1866,41 @@
                 `;
             });
         }
+// Standalone function para mag-fetch ng complaints mula Supabase
+async function fetchComplaintsFromSupabase() {
+    try {
+        const sb = getSupabase();
+        if (!sb) return;
 
+        const { data, error } = await sb.from('customer_complaints').select('*');
+
+        if (error) {
+            console.error("Error fetching complaints:", error.message);
+            return;
+        }
+
+        if (data && data.length > 0) {
+            customerComplaints = data.map(item => ({
+                id: item.id || item.account_no,
+                date: item.date || item.created_at?.split('T')[0],
+                name: item.customer_name || item.name,
+                address: item.address || 'N/A',
+                landmark: item.landmark || item.barangay || 'Poblacion',
+                contact: item.contact || 'N/A',
+                barangay: item.barangay || 'Poblacion',
+                note: item.note || 'Walang internet / Connection issue',
+                technician: item.technician || 'Unassigned',
+                status: item.status || 'PENDING',
+                resolvedDate: item.resolved_date || null
+            }));
+
+            localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
+            renderCustomersComplainView();
+        }
+    } catch (err) {
+        console.error("Supabase fetch error:", err);
+    }
+}
         async function openAppDashboard() {
             // Supabase Realtime para mag-auto update ang complaints
             const sb = getSupabase();
