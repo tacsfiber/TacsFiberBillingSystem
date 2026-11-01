@@ -1439,7 +1439,7 @@
                         <span>Date of Payment</span>
                         <span class="text-[10px] text-amber-600 font-bold"><i class="fa-solid fa-lock mr-1"></i>Auto System Date</span>
                     </label>
-                     <input type="date" id="pay-date" readonly required class="w-full border border-slate-200 bg-slate-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-not-allowed">
+                    <input type="date" id="pay-date" readonly required class="w-full border border-slate-200 bg-slate-100 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 cursor-not-allowed">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Billing Month</label>
@@ -1803,51 +1803,7 @@
                 document.getElementById('login-pass').value = '';
             }
         }
-// -------------------------------------------------------------
-// AUTOMATED MONTHLY BILLING GENERATOR (TacsFiber)
-// -------------------------------------------------------------
-async function checkAndApplyMonthlyBilling() {
-    const today = new Date();
-    const currentDay = today.getDate(); // Halimbawa: 1 pagsapit ng due date
-    const currentMonthYear = today.toLocaleString('default', { month: 'long', year: 'numeric' }); // "November 2026"
 
-    let hasUpdates = false;
-
-    if (typeof subscribers !== 'undefined' && subscribers.length > 0) {
-        for (let sub of subscribers) {
-            // Kung active ang kustomer, sumapit na ang due date, at hindi pa na-bill ngayong buwan
-            // Kunin ang due day ng kustomer (default sa 19 kung walang nakalagay)
-            const due = sub.dueDay || 19;
-            
-            // Susuriin kung active, umabot na sa due day (o mas maaga kung gustong isama sa billing cycle), at hindi pa na-bill ngayong buwan
-            const isDueTodayOrPast = due <= currentDay; 
-            
-            if ((sub.status || 'ACTIVE') === 'ACTIVE' && isDueTodayOrPast && sub.lastBilledMonth !== currentMonthYear) {
-                const planAmount = parseFloat(sub.monthlyPlan) || 600;
-                sub.balance = (parseFloat(sub.balance) || 0) + planAmount;
-                sub.lastBilledMonth = currentMonthYear;
-                hasUpdates = true;
-
-                // I-sync sa Supabase Cloud database
-                try {
-                    if (typeof getSupabase === 'function' && getSupabase()) {
-                        await getSupabase().from('subscribers').update({
-                            balance: sub.balance,
-                            last_billed_month: currentMonthYear
-                        }).eq('id', sub.id);
-                    }
-                } catch (e) {
-                    console.error('Error syncing monthly billing:', e);
-                }
-            }
-        }
-
-        if (hasUpdates && typeof refreshAllViewsUIOnly === 'function') {
-            console.log(`🟢 Auto-billing executed successfully for ${currentMonthYear}!`);
-            refreshAllViewsUIOnly();
-        }
-    }
-}
         function handleLogout() {
             localStorage.removeItem('tacsfiber_auth');
             location.reload();
@@ -1923,7 +1879,6 @@ async function checkAndApplyMonthlyBilling() {
 
             if (!isDataLoaded) {
                 await fetchSubscribersFromSupabase();
-                await checkAndApplyMonthlyBilling();
             }
 
             renderNavigationTabs();
@@ -3220,16 +3175,29 @@ TacsFiber Team and Management`;
             const sub = subscribers.find(s => s.id === subId);
             if(!sub) return;
 
-            const newStatus = (sub.status || 'ACTIVE') === 'ACTIVE' ? 'DISCONNECTED' : 'ACTIVE';
+            const currentStatus = sub.status || 'ACTIVE';
+            const newStatus = currentStatus === 'ACTIVE' ? 'DISCONNECTED' : 'ACTIVE';
+            
+            let warningMessage = newStatus === 'DISCONNECTED' 
+                ? `⚠️ BABALA: Sigurado ka bang gusto mong i-CUT-OFF / IDISCONNECT ang linya ng kustomer na si ${sub.name} (${sub.id})?`
+                : `🔄 Sigurado ka bang gusto mong I-RECONNECT ang linya ni ${sub.name} (${sub.id})?`;
+
+            if (!confirm(warningMessage)) {
+                return; // Kung pinindot ang Cancel, ititigil ang proseso
+            }
+
             sub.status = newStatus;
             const today = new Date().toISOString().split('T')[0];
             if(newStatus === 'DISCONNECTED' && !sub.dateDisconnected) {
                 sub.dateDisconnected = today;
+            } else if(newStatus === 'ACTIVE') {
+                sub.dateDisconnected = null;
             }
 
             const sb = getSupabase();
             if(sb) await sb.from('subscribers').update({ status: newStatus, date_disconnected: sub.dateDisconnected }).eq('id', subId);
             refreshAllViewsUIOnly();
+            alert(`Matagumpay na na-update ang status ni ${sub.name} sa ${newStatus}!`);
         }
 
         async function updateDisconnectDate(subId, newDate) {
@@ -3238,26 +3206,47 @@ TacsFiber Team and Management`;
                 alert('Tanging Admin at Assistant Admin lamang ang maaaring magtakda ng petsa ng pag-disconnect!');
                 return;
             }
+            
+            // 1. Hanapin ang kustomer sa local array at i-update agad
             const sub = subscribers.find(s => s.id === subId);
             if(sub) {
                 sub.dateDisconnected = newDate;
-                const sb = getSupabase();
-                if(sb) await sb.from('subscribers').update({ date_disconnected: newDate }).eq('id', subId);
-                alert(`Na-update ang petsa ng pag-disconnect para kay ${sub.name}!`);
+                
+                // 2. I-save sa Supabase Cloud para hindi mawala kapag nag-sync
+                try {
+                    const sb = getSupabase();
+                    if(sb) {
+                        const { error } = await sb.from('subscribers')
+                            .update({ date_disconnected: newDate })
+                            .eq('id', subId);
+                            
+                        if(error) throw error;
+                    }
+                } catch(err) {
+                    console.error("Error sa pag-save ng disconnect date sa Supabase:", err);
+                    alert("⚠️ Babala: Hindi na-save sa cloud database ang petsa, ngunit naka-update ito sa local view.");
+                }
+
+                // 3. I-refresh ang UI para makita ang pagbabago
+                refreshAllViewsUIOnly();
+                alert(`Matagumpay na na-update at na-save ang petsa ng pag-disconnect para kay ${sub.name}!`);
             }
         }
 
         async function reconnectSubscriber(subId) {
             const sub = subscribers.find(s => s.id === subId);
             if(!sub) return;
-            if(confirm(`Sigurado ka bang ibabalik at ire-reconnect ang linya ni ${sub.name}?`)) {
-                sub.status = 'ACTIVE';
-                sub.dateDisconnected = null;
-                const sb = getSupabase();
-                if(sb) await sb.from('subscribers').update({ status: 'ACTIVE', date_disconnected: null }).eq('id', subId);
-                refreshAllViewsUIOnly();
-                alert(`Matagumpay na na-reconnect ang linya ni ${sub.name}!`);
+
+            if(!confirm(`🔄 Sigurado ka bang gusto mong i-reconnect ang linya ni ${sub.name} (${sub.id})?`)) {
+                return;
             }
+
+            sub.status = 'ACTIVE';
+            sub.dateDisconnected = null;
+            const sb = getSupabase();
+            if(sb) await sb.from('subscribers').update({ status: 'ACTIVE', date_disconnected: null }).eq('id', subId);
+            refreshAllViewsUIOnly();
+            alert(`Matagumpay na na-reconnect ang linya ni ${sub.name}!`);
         }
 
         function renderCustomersListTable() {
@@ -3346,41 +3335,14 @@ TacsFiber Team and Management`;
             const brgyFilter = document.getElementById('alertBrgyFilter') ? document.getElementById('alertBrgyFilter').value : 'ALL';
             const dueDayFilter = document.getElementById('alertDueFilter') ? document.getElementById('alertDueFilter').value : 'ALL';
 
-            // Gagamitin natin ang lahat ng active subscribers para masuri ang due date kahit 0 balance pa
-            let list = subscribers.filter(s => (s.status || 'ACTIVE') === 'ACTIVE');
-            
+            let list = subscribers.filter(s => (s.balance || 0) > 0);
             if(brgyFilter !== 'ALL') list = list.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
             if(dueDayFilter !== 'ALL') list = list.filter(s => String(s.dueDay || 19) === String(dueDayFilter));
 
-            // Suriin ang due date para sa bawat kategorya
-            const overdueList = list.filter(s => {
-    const balance = s.balance || 0;
-    if (balance <= 0) return false;
-
-    // Gamitin ang date_installed para sa mathematical calculation ng due date
-    if (s.date_installed || s.dateInstalled) {
-        const installDateStr = s.date_installed || s.dateInstalled;
-        const installDate = new Date(installDateStr);
-        const today = new Date();
-        
-        // Kunin ang bilang ng araw mula nang ma-install (diffInDays)
-        const diffTime = today - installDate;
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-        // Overdue kung mahigit 30 araw na mula installation/cycle at may unpaid balance pa
-        return diffDays > 30;
-    }
-
-    // Fallback kung blangko ang date_installed
-    const due = s.dueDay || 19;
-    return due < currentDay;
-});
+            const overdueList = list.filter(s => (s.dueDay || 19) < currentDay);
             const dueTodayList = list.filter(s => (s.dueDay || 19) === currentDay);
             const comingDueList = list.filter(s => {
                 const due = s.dueDay || 19;
-                if (currentDay >= 28) {
-                    return due >= 1 && due <= 3;
-                }
                 return due > currentDay && due <= currentDay + 3;
             });
 
@@ -3531,20 +3493,8 @@ TacsFiber Team and Management`;
             document.getElementById('stat-total').innerText = subscribers.length;
             document.getElementById('stat-active').innerText = subscribers.filter(s => (s.status || 'ACTIVE') === 'ACTIVE').length;
             document.getElementById('stat-suspended').innerText = subscribers.filter(s => (s.status || 'ACTIVE') === 'DISCONNECTED').length;
-document.getElementById('stat-overdue').innerText = subscribers.filter(s => {
-        const balance = s.balance || 0;
-        if (balance <= 0) return false;
-        if (s.date_installed || s.dateInstalled) {
-            const installDate = new Date(s.date_installed || s.dateInstalled);
-            const today = new Date();
-            const diffTime = today - installDate;
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            return diffDays > 30;
-        }
-        const due = s.dueDay || 19;
-        return due < currentDay;
-    }).length;            
-        document.getElementById('stat-revenue').innerText = '₱' + subscribers.reduce((acc, s) => acc + (s.monthlyPlan || 0), 0).toLocaleString();
+            document.getElementById('stat-overdue').innerText = subscribers.filter(s => (s.balance || 0) > 0 && (s.dueDay || 19) < currentDay).length;
+            document.getElementById('stat-revenue').innerText = '₱' + subscribers.reduce((acc, s) => acc + (s.monthlyPlan || 0), 0).toLocaleString();
             
             renderTechnicianAnalytics();
         }
