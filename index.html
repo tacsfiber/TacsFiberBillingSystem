@@ -2703,8 +2703,10 @@ TacsFiber Team and Management`;
         const today = new Date().toISOString().split('T')[0];
         const newComplain = {
             id: sub.id,
+            account_no: sub.id,
             date: today,
             name: sub.name,
+            customer_name: sub.name,
             address: sub.address || 'N/A',
             landmark: sub.barangay || 'Poblacion',
             contact: sub.contact || 'N/A',
@@ -2715,19 +2717,20 @@ TacsFiber Team and Management`;
             resolvedDate: null
         };
 
-        // 1. LOCAL STORAGE: Agad na i-save sa local array at localStorage para mabilis at may backup
+        // 1. Save sa LocalStorage
         customerComplaints.unshift(newComplain);
         localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
 
-        // 2. SUPABASE CLOUD: Sabay ring i-insert sa Supabase para makita ng mga technician sa ibang device
+        // 2. Save sa Supabase Cloud (In-update ang customer_name field)
         try {
             const sb = getSupabase();
             if (sb) {
                 const { error } = await sb.from('customer_complaints').insert([
                     {
                         id: sub.id,
+                        account_no: sub.id,
                         date: today,
-                        name: sub.name,
+                        customer_name: sub.name, // <-- customer_name na ang ginamit natin dito!
                         address: sub.address || 'N/A',
                         landmark: sub.barangay || 'Poblacion',
                         contact: sub.contact || 'N/A',
@@ -2740,7 +2743,7 @@ TacsFiber Team and Management`;
                 if (error) {
                     console.error("Supabase insert warning:", error.message);
                 } else {
-                    console.log("Matagumpay ding na-sync sa Supabase ang complain!");
+                    console.log("Matagumpay na nai-save sa Supabase ang complain!");
                 }
             }
         } catch(err) {
