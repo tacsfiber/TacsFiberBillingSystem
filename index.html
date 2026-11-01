@@ -1868,6 +1868,20 @@
         }
 
         async function openAppDashboard() {
+            // Supabase Realtime para mag-auto update ang complaints
+            const sb = getSupabase();
+            if (sb) {
+                sb.channel('complaints-changes')
+                  .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'customer_complaints' },
+                    (payload) => {
+                      console.log('Realtime update received:', payload);
+                      renderCustomersComplainView(); // Kusang mag-a-update ang listahan
+                    }
+                  )
+                  .subscribe();
+            }
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             
