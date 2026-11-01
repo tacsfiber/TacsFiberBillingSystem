@@ -1866,12 +1866,13 @@
                 `;
             });
         }
-// Standalone function para mag-fetch ng complaints mula Supabase
+// Standalone function para sa pag-fetch ng customer_complaints mula sa Supabase Cloud
 async function fetchComplaintsFromSupabase() {
     try {
         const sb = getSupabase();
         if (!sb) return;
 
+        // Dito na makikita sa Network tab ang pagtawag sa customer_complaints table!
         const { data, error } = await sb.from('customer_complaints').select('*');
 
         if (error) {
@@ -1894,6 +1895,7 @@ async function fetchComplaintsFromSupabase() {
                 resolvedDate: item.resolved_date || null
             }));
 
+            // I-save sa LocalStorage at i-render sa UI ng Technician
             localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
             renderCustomersComplainView();
         }
@@ -1909,8 +1911,9 @@ async function fetchComplaintsFromSupabase() {
                   .on(
                     'postgres_changes',
                     { event: '*', schema: 'public', table: 'customer_complaints' },
-                    (payload) => {
+                    async (payload) => {
                       console.log('Realtime update received:', payload);
+                      await fetchComplaintsFromSupabase();
                       renderCustomersComplainView(); // Kusang mag-a-update ang listahan
                     }
                   )
@@ -1927,6 +1930,7 @@ async function fetchComplaintsFromSupabase() {
 
             if (!isDataLoaded) {
                 await fetchSubscribersFromSupabase();
+                await fetchComplaintsFromSupabase(); // ⭐ Dito natin isasabay ang pag-fetch ng complaints!
             }
 
             renderNavigationTabs();
