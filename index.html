@@ -2692,32 +2692,64 @@ TacsFiber Team and Management`;
             dropdown.classList.remove('hidden');
         }
 
-        function selectCustomerForComplain(subId) {
-            const sub = subscribers.find(s => s.id === subId);
-            document.getElementById('complain-dropdown-results').classList.add('hidden');
-            document.getElementById('complain-search-input').value = '';
-            if(!sub) return;
+        async function selectCustomerForComplain(subId) {
+    const sub = subscribers.find(s => s.id === subId);
+    document.getElementById('complain-dropdown-results').classList.add('hidden');
+    document.getElementById('complain-search-input').value = '';
+    if(!sub) return;
 
-            const existing = customerComplaints.find(c => c.id === subId && c.status === 'PENDING');
-            if(!existing) {
-                const today = new Date().toISOString().split('T')[0];
-                customerComplaints.unshift({
-                    id: sub.id,
-                    date: today,
-                    name: sub.name,
-                    address: sub.address || 'N/A',
-                    landmark: sub.barangay || 'Poblacion',
-                    contact: sub.contact || 'N/A',
-                    barangay: sub.barangay || 'Poblacion',
-                    note: 'Walang internet / Connection issue',
-                    technician: getActiveUser(),
-                    status: 'PENDING',
-                    resolvedDate: null
-                });
-                localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
+    const existing = customerComplaints.find(c => c.id === subId && c.status === 'PENDING');
+    if(!existing) {
+        const today = new Date().toISOString().split('T')[0];
+        const newComplain = {
+            id: sub.id,
+            date: today,
+            name: sub.name,
+            address: sub.address || 'N/A',
+            landmark: sub.barangay || 'Poblacion',
+            contact: sub.contact || 'N/A',
+            barangay: sub.barangay || 'Poblacion',
+            note: 'Walang internet / Connection issue',
+            technician: getActiveUser(),
+            status: 'PENDING',
+            resolvedDate: null
+        };
+
+        // 1. LOCAL STORAGE: Agad na i-save sa local array at localStorage para mabilis at may backup
+        customerComplaints.unshift(newComplain);
+        localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
+
+        // 2. SUPABASE CLOUD: Sabay ring i-insert sa Supabase para makita ng mga technician sa ibang device
+        try {
+            const sb = getSupabase();
+            if (sb) {
+                const { error } = await sb.from('customer_complaints').insert([
+                    {
+                        id: sub.id,
+                        date: today,
+                        name: sub.name,
+                        address: sub.address || 'N/A',
+                        landmark: sub.barangay || 'Poblacion',
+                        contact: sub.contact || 'N/A',
+                        barangay: sub.barangay || 'Poblacion',
+                        note: 'Walang internet / Connection issue',
+                        technician: getActiveUser(),
+                        status: 'PENDING'
+                    }
+                ]);
+                if (error) {
+                    console.error("Supabase insert warning:", error.message);
+                } else {
+                    console.log("Matagumpay ding na-sync sa Supabase ang complain!");
+                }
             }
-            switchComplainTab('PENDING');
+        } catch(err) {
+            console.error("Supabase connection error:", err);
         }
+    }
+    switchComplainTab('PENDING');
+    renderCustomersComplainView();
+}
 
         function renderCustomersComplainView() {
             const container = document.getElementById('complain-cards-container');
