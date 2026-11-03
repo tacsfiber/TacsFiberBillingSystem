@@ -2798,27 +2798,30 @@ TacsFiber Team and Management`;
         try {
             const sb = getSupabase();
             if (sb) {
-        const { error } = await sb.from('customer_complaints').insert([
-            {
-                id: 'COMP-' + Date.now(), // ⭐ Bawat reklamo ay may sarili at natatanging ID na hindi mag-a-overwrite!
-                account_no: sub.id,
-                date: today,
-                customer_name: sub.name,
-                address: sub.address || 'N/A',
-                landmark: sub.barangay || 'Poblacion',
-                contact: sub.contact || 'N/A',
-                barangay: sub.barangay || 'Poblacion',
-                note: 'Walang internet / Connection issue',
-                technician: getActiveUser(),
-                status: 'PENDING',
-                resolved_date: null // ⭐ Sinisiguro nating walang lumang resolved date ang bago
-            }
-        ]);
-                if (error) {
-                    console.error("Supabase insert warning:", error.message);
-                } else {
-                    console.log("Matagumpay na nai-save sa Supabase ang complain!");
-                }
+    const { error } = await sb.from('customer_complaints').insert([
+        {
+            id: Date.now(), // ⭐ Pure numbers para tanggapin ng Supabase
+            account_no: sub.id,
+            date: today,
+            customer_name: sub.name,
+            address: sub.address || 'N/A',
+            landmark: sub.barangay || 'Poblacion',
+            contact: sub.contact || 'N/A',
+            barangay: sub.barangay || 'Poblacion',
+            note: 'Walang internet / Connection issue',
+            technician: getActiveUser(),
+            status: 'PENDING',
+            repair_date: null // ⭐ Tumutugma sa repair_date column ng Supabase
+        }
+    ]);
+
+    if (error) {
+        console.error("Supabase insert warning:", error.message);
+        alert("⚠️ Error sa pag-save sa Supabase: " + error.message); // ⭐ Makikita natin agad ang dahilan kung sakaling mag-error
+    } else {
+        console.log("Matagumpay na nai-save sa Supabase ang complain!");
+        await fetchComplaintsFromSupabase(); // ⭐ I-fetch agad para ma-sync ang UI
+    }
             }
         } catch(err) {
             console.error("Supabase connection error:", err);
