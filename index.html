@@ -1872,7 +1872,6 @@ async function fetchComplaintsFromSupabase() {
         const sb = getSupabase();
         if (!sb) return;
 
-        // Dito na makikita sa Network tab ang pagtawag sa customer_complaints table!
         const { data, error } = await sb.from('customer_complaints').select('*');
 
         if (error) {
@@ -1891,11 +1890,11 @@ async function fetchComplaintsFromSupabase() {
                 barangay: item.barangay || 'Poblacion',
                 note: item.note || 'Walang internet / Connection issue',
                 technician: item.technician || 'Unassigned',
-                status: item.status || 'PENDING',
-                resolvedDate: item.resolved_date || null
+                // ⭐ SIGURADUHING NAKAKUHA ANG STATUS MULA SA DATABASE (DEFAULT 'PENDING' KUNG WALA)
+                status: item.status ? item.status.toUpperCase() : 'PENDING',
+                resolvedDate: item.resolved_date || item.resolvedDate || null
             }));
 
-            // I-save sa LocalStorage at i-render sa UI ng Technician
             localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
             renderCustomersComplainView();
         }
@@ -2785,9 +2784,27 @@ TacsFiber Team and Management`;
                 }
             }
         } catch(err) {
-            console.error("Supabase connection error:", err);
+        console.error("Supabase connection error:", err);
+    }
+}
+
+async function markComplaintAsResolved(complaintId) {
+    // 1. I-update sa Supabase Cloud para hindi na bumalik kahit mag-fetch ulit
+    const sb = getSupabase();
+    if (sb) {
+        const { error } = await sb
+            .from('customer_complaints')
+            .update({ status: 'RESOLVED', resolved_date: new Date().toISOString().split('T')[0] })
+            .eq('id', complaintId); // Siguraduhing tugma sa primary key o account_no ng iyong table
+
+        if (error) {
+            console.error("Error updating complaint status in Supabase:", error);
+            return;
         }
     }
+
+    // 2. Kunin ang bagong listahan mula sa Supabase para mag-sync ang UI
+    await fetchComplaintsFromSupabase();
     switchComplainTab('PENDING');
     renderCustomersComplainView();
 }
@@ -2846,6 +2863,7 @@ TacsFiber Team and Management`;
                                 <button onclick="exportSingleComplainNotepad(${originalIndex})" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition shadow" title="Export to Notepad">
                                     <i class="fa-solid fa-file-arrow-down mr-1"></i>Export .txt
                                 </button>
+                                ${!isResolved ? `<button onclick="markComplaintAsResolved('${c.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1 shadow-sm"><i class="fa-solid fa-check mr-1"></i>Mark Resolved</button>` : ''}
                                 ${role !== 'TECHNICIAN' ? `<button onclick="deleteComplain(${originalIndex})" class="text-rose-500 hover:text-rose-700 p-1.5 text-xs cursor-pointer"><i class="fa-solid fa-trash"></i></button>` : ''}
                             </div>
                         </div>
