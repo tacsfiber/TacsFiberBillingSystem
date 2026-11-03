@@ -1892,7 +1892,7 @@ async function fetchComplaintsFromSupabase() {
                 note: item.note || 'Walang internet / Connection issue',
                 technician: item.technician || 'Unassigned',
                 status: item.status ? item.status.toUpperCase() : 'PENDING',
-                resolvedDate: item.resolved_date || null
+                resolvedDate: item.repair_date || item.resolved_date || item.resolvedDate || null
             }));
 
             // I-save sa LocalStorage at i-render sa UI ng Technician
@@ -1908,14 +1908,14 @@ async function markComplaintAsResolved(complaintId) {
         const sb = getSupabase();
         if (!sb) return;
 
-        // 1. I-update ang status sa Supabase Cloud Database
+        // 1. I-update ang status sa Supabase Cloud Database (Gamitin ang tamang column name na 'repair_date')
         const { error } = await sb
             .from('customer_complaints')
             .update({ 
                 status: 'RESOLVED',
-                resolved_date: new Date().toISOString()
+                repair_date: new Date().toISOString().split('T')[0] // ⭐ Dito natin itinugma sa column sa Supabase mo
             })
-            .eq('id', complaintId); // ⭐ DAPAT NANDITO ITO PARA SPECIFIC NA KUMPLAIN LANG ANG MA-UPDATE!
+            .eq('id', complaintId);
 
         if (error) {
             console.error("Error updating complaint status in Supabase:", error.message);
@@ -1927,7 +1927,7 @@ async function markComplaintAsResolved(complaintId) {
         const target = customerComplaints.find(c => c.id === complaintId);
         if (target) {
             target.status = 'RESOLVED';
-            target.resolvedDate = new Date().toISOString();
+            target.resolvedDate = new Date().toISOString().split('T')[0];
         }
 
         // 3. I-save sa LocalStorage at i-refresh ang UI
