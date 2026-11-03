@@ -2798,21 +2798,22 @@ TacsFiber Team and Management`;
         try {
             const sb = getSupabase();
             if (sb) {
-                const { error } = await sb.from('customer_complaints').insert([
-                    {
-                        id: sub.id,
-                        account_no: sub.id,
-                        date: today,
-                        customer_name: sub.name, // <-- customer_name na ang ginamit natin dito!
-                        address: sub.address || 'N/A',
-                        landmark: sub.barangay || 'Poblacion',
-                        contact: sub.contact || 'N/A',
-                        barangay: sub.barangay || 'Poblacion',
-                        note: 'Walang internet / Connection issue',
-                        technician: getActiveUser(),
-                        status: 'PENDING'
-                    }
-                ]);
+        const { error } = await sb.from('customer_complaints').insert([
+            {
+                id: 'COMP-' + Date.now(), // ⭐ Bawat reklamo ay may sarili at natatanging ID na hindi mag-a-overwrite!
+                account_no: sub.id,
+                date: today,
+                customer_name: sub.name,
+                address: sub.address || 'N/A',
+                landmark: sub.barangay || 'Poblacion',
+                contact: sub.contact || 'N/A',
+                barangay: sub.barangay || 'Poblacion',
+                note: 'Walang internet / Connection issue',
+                technician: getActiveUser(),
+                status: 'PENDING',
+                resolved_date: null // ⭐ Sinisiguro nating walang lumang resolved date ang bago
+            }
+        ]);
                 if (error) {
                     console.error("Supabase insert warning:", error.message);
                 } else {
