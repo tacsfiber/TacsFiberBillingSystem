@@ -4181,18 +4181,18 @@ async function markComplaintAsResolved(complaintId) {
         }
 
         function exportJsonBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({subscribers, paymentLogs, systemUsers, customerComplaints, internetInstallations}, null, 2));
-            const dl = document.createElement('a');
-            dl.setAttribute("href", dataStr);
-            dl.setAttribute("download", `tacsfiber_backup.json`);
-            dl.click();
-            dl.remove();
-        }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ subscribers, paymentLogs, systemUsers, customerComplaints }, null, 2));
+    const dl = document.createElement('a');
+    dl.setAttribute('href', dataStr);
+    dl.setAttribute('download', 'tacsfiber_backup.json');
+    dl.click();
+    dl.remove();
+}
 
-        function togglePassword() {
-            const p = document.getElementById('login-pass');
-            if (p) p.type = p.type === 'password' ? 'text' : 'password';
-        }
-    </script>
+function togglePassword() {
+    const p = document.getElementById('login-pass');
+    if (p) p.type = p.type === 'password' ? 'text' : 'password';
+}
+</script>
 </body>
 </html>
