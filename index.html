@@ -1872,6 +1872,7 @@ async function fetchComplaintsFromSupabase() {
         const sb = getSupabase();
         if (!sb) return;
 
+        // Dito na makikita sa Network tab ang pagtawag sa customer_complaints table!
         const { data, error } = await sb.from('customer_complaints').select('*');
 
         if (error) {
@@ -1890,16 +1891,51 @@ async function fetchComplaintsFromSupabase() {
                 barangay: item.barangay || 'Poblacion',
                 note: item.note || 'Walang internet / Connection issue',
                 technician: item.technician || 'Unassigned',
-                // ⭐ SIGURADUHING NAKAKUHA ANG STATUS MULA SA DATABASE (DEFAULT 'PENDING' KUNG WALA)
                 status: item.status ? item.status.toUpperCase() : 'PENDING',
-                resolvedDate: item.resolved_date || item.resolvedDate || null
+                resolvedDate: item.resolved_date || null
             }));
 
+            // I-save sa LocalStorage at i-render sa UI ng Technician
             localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
             renderCustomersComplainView();
         }
     } catch (err) {
         console.error("Supabase fetch error:", err);
+    }
+}
+async function markComplaintAsResolved(complaintId) {
+    try {
+        const sb = getSupabase();
+        if (!sb) return;
+
+        // 1. I-update ang status sa Supabase Cloud Database
+        const { error } = await sb
+            .from('customer_complaints')
+            .update({ 
+                status: 'RESOLVED',
+                resolved_date: new Date().toISOString()
+            })
+            .eq('id', complaintId); // ⭐ DAPAT NANDITO ITO PARA SPECIFIC NA KUMPLAIN LANG ANG MA-UPDATE!
+
+        if (error) {
+            console.error("Error updating complaint status in Supabase:", error.message);
+            alert("Nagka-error sa pag-update sa Supabase: " + error.message);
+            return;
+        }
+
+        // 2. I-update ang local array status
+        const target = customerComplaints.find(c => c.id === complaintId);
+        if (target) {
+            target.status = 'RESOLVED';
+            target.resolvedDate = new Date().toISOString();
+        }
+
+        // 3. I-save sa LocalStorage at i-refresh ang UI
+        localStorage.setItem('tacsfiber_complaints', JSON.stringify(customerComplaints));
+        renderCustomersComplainView();
+
+    } catch (err) {
+        console.error("Unexpected error:", err);
     }
 }
         async function openAppDashboard() {
@@ -2784,27 +2820,9 @@ TacsFiber Team and Management`;
                 }
             }
         } catch(err) {
-        console.error("Supabase connection error:", err);
-    }
-}
-
-async function markComplaintAsResolved(complaintId) {
-    // 1. I-update sa Supabase Cloud para hindi na bumalik kahit mag-fetch ulit
-    const sb = getSupabase();
-    if (sb) {
-        const { error } = await sb
-            .from('customer_complaints')
-            .update({ status: 'RESOLVED', resolved_date: new Date().toISOString().split('T')[0] })
-            .eq('id', complaintId); // Siguraduhing tugma sa primary key o account_no ng iyong table
-
-        if (error) {
-            console.error("Error updating complaint status in Supabase:", error);
-            return;
+            console.error("Supabase connection error:", err);
         }
     }
-
-    // 2. Kunin ang bagong listahan mula sa Supabase para mag-sync ang UI
-    await fetchComplaintsFromSupabase();
     switchComplainTab('PENDING');
     renderCustomersComplainView();
 }
@@ -4181,18 +4199,18 @@ async function markComplaintAsResolved(complaintId) {
         }
 
         function exportJsonBackup() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ subscribers, paymentLogs, systemUsers, customerComplaints }, null, 2));
-    const dl = document.createElement('a');
-    dl.setAttribute('href', dataStr);
-    dl.setAttribute('download', 'tacsfiber_backup.json');
-    dl.click();
-    dl.remove();
-}
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({subscribers, paymentLogs, systemUsers, customerComplaints, internetInstallations}, null, 2));
+            const dl = document.createElement('a');
+            dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `tacsfiber_backup.json`);
+            dl.click();
+            dl.remove();
+        }
 
-function togglePassword() {
-    const p = document.getElementById('login-pass');
-    if (p) p.type = p.type === 'password' ? 'text' : 'password';
-}
-</script>
+        function togglePassword() {
+            const p = document.getElementById('login-pass');
+            if (p) p.type = p.type === 'password' ? 'text' : 'password';
+        }
+    </script>
 </body>
 </html>
