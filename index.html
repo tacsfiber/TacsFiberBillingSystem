@@ -1866,6 +1866,81 @@
                 `;
             });
         }
+        
+async function fetchInstallationsFromSupabase() {
+    try {
+        const sb = getSupabase();
+        if (!sb) return;
+
+        const { data, error } = await sb
+            .from('internet_installations')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error("Error fetching installations:", error.message);
+            return;
+        }
+
+        if (data && data.length > 0) {
+            internetInstallations = data.map(item => ({
+                id: item.id,
+                date: item.date || item.created_at?.split('T')[0],
+                name: item.customer_name,
+                contact: item.contact || 'N/A',
+                address: item.address || 'N/A',
+                monthlyPlan: item.monthly_plan || 600,
+                note: item.note || '',
+                technician: item.technician || 'Unassigned',
+                status: item.status ? item.status.toUpperCase() : 'PENDING',
+                completedDate: item.completed_date || null
+            }));
+
+            localStorage.setItem('tacsfiber_installations', JSON.stringify(internetInstallations));
+            if (typeof renderInternetInstallationView === 'function') {
+                renderInternetInstallationView();
+            }
+        }
+    } catch (err) {
+        console.error("Supabase installation fetch error:", err);
+    }
+}
+
+async function saveNewInstallation(installationData) {
+    try {
+        const sb = getSupabase();
+        if (sb) {
+            const newId = Date.now(); // Pure numeric unique ID
+
+            const { error } = await sb.from('internet_installations').insert([
+                {
+                    id: newId,
+                    account_no: installationData.accountNo || ('TF-' + Math.floor(1000 + Math.random() * 9000)),
+                    customer_name: installationData.name,
+                    address: installationData.address,
+                    barangay: installationData.barangay || 'Poblacion',
+                    landmark: installationData.landmark || 'N/A',
+                    contact: installationData.contact,
+                    plan: installationData.plan,
+                    status: 'PENDING',
+                    note: installationData.note || '', // ⭐ Nasasalo na ang note mula sa UI
+                    technician: installationData.technician || getActiveUser() // ⭐ Nasasalo ang technician mula sa UI o active user
+                }
+            ]);
+
+            if (error) {
+                console.error("Installation insert error:", error.message);
+                alert("⚠️ Error sa pag-save ng installation: " + error.message);
+            } else {
+                console.log("Matagumpay na nai-save sa Supabase ang installation!");
+                await fetchInstallationsFromSupabase();
+            }
+        }
+    } catch (err) {
+        console.error("Unexpected error:", err);
+    }
+}
+        
 // Standalone function para sa pag-fetch ng customer_complaints mula sa Supabase Cloud
 async function fetchComplaintsFromSupabase() {
     try {
@@ -2140,45 +2215,83 @@ async function markComplaintAsResolved(complaintId) {
             renderInternetInstallationView();
         }
 
-        function handleSaveInstallation(e) {
-            e.preventDefault();
-            const editId = document.getElementById('inst-edit-id').value;
-            const name = document.getElementById('inst-name').value.trim();
-            const contact = document.getElementById('inst-contact').value.trim();
-            const address = document.getElementById('inst-address').value.trim();
-            const monthlyPlan = parseFloat(document.getElementById('inst-plan').value) || 600;
-            const note = document.getElementById('inst-note').value.trim();
-            const technician = document.getElementById('inst-tech-name').value.trim() || getActiveUser();
-            const today = new Date().toISOString().split('T')[0];
+        async function handleSaveInstallation(e) {
+    e.preventDefault();
+    const editId = document.getElementById('inst-edit-id').value;
+    const name = document.getElementById('inst-name').value.trim();
+    const contact = document.getElementById('inst-contact').value.trim();
+    const address = document.getElementById('inst-address').value.trim();
+    const monthlyPlan = parseFloat(document.getElementById('inst-plan').value) || 600;
+    const note = document.getElementById('inst-note').value.trim();
+    const technician = document.getElementById('inst-tech-name').value.trim() || getActiveUser();
+    const today = new Date().toISOString().split('T')[0];
 
-            if (editId) {
-                const item = internetInstallations.find(i => i.id === editId);
-                if (item) {
-                    item.name = name;
-                    item.contact = contact;
-                    item.address = address;
-                    item.monthlyPlan = monthlyPlan;
-                    item.note = note;
-                    item.technician = technician;
-                }
-                alert(`Matagumpay na na-update ang installation task para kay ${name}!`);
-            } else {
-                const generatedId = 'INST-' + Math.floor(1000 + Math.random() * 9000);
-                const newTask = {
-                    id: generatedId,
-                    date: today,
-                    name, contact, address, monthlyPlan, note, technician,
-                    status: 'PENDING',
-                    completedDate: null
-                };
-                internetInstallations.unshift(newTask);
-                alert(`Na-dispatch na ang installation task (ID: ${generatedId})!`);
+    const sb = getSupabase();
+
+    if (editId) {
+        // Edit Existing Task
+        const item = internetInstallations.find(i => i.id === editId);
+        if (item) {
+            item.name = name;
+            item.contact = contact;
+            item.address = address;
+            item.monthlyPlan = monthlyPlan;
+            item.note = note;
+            item.technician = technician;
+
+            if (sb) {
+                const { error } = await sb.from('internet_installations').update({
+                    customer_name: name,
+                    contact: contact,
+                    address: address,
+                    monthly_plan: monthlyPlan,
+                    note: note,
+                    technician: technician
+                }).eq('id', editId);
+
+                if (error) console.error("Error updating installation in Supabase:", error.message);
             }
-
-            saveData();
-            resetInstallationForm();
-            renderInternetInstallationView();
         }
+        alert(`Matagumpay na na-update ang installation task para kay ${name}!`);
+    } else {
+        // Create New Task
+        const generatedId = 'INST-' + Math.floor(1000 + Math.random() * 9000);
+        const newTask = {
+            id: generatedId,
+            date: today,
+            name, contact, address, monthlyPlan, note, technician,
+            status: 'PENDING',
+            completedDate: null
+        };
+        internetInstallations.unshift(newTask);
+
+        if (sb) {
+            const { error } = await sb.from('internet_installations').insert([{
+                id: generatedId,
+                date: today,
+                customer_name: name,
+                contact: contact,
+                address: address,
+                monthly_plan: monthlyPlan,
+                note: note,
+                technician: technician,
+                status: 'PENDING',
+                completed_date: null
+            }]);
+
+            if (error) {
+                console.error("Supabase insert error:", error.message);
+                alert("⚠️ Error sa pag-save sa Supabase: " + error.message);
+            }
+        }
+        alert(`Na-dispatch na ang installation task (ID: ${generatedId})!`);
+    }
+
+    saveData();
+    resetInstallationForm();
+    renderInternetInstallationView();
+    if (sb) await fetchInstallationsFromSupabase();
+}
 
         function editInstallationTask(id) {
             const item = internetInstallations.find(i => i.id === id);
@@ -2303,50 +2416,74 @@ async function markComplaintAsResolved(complaintId) {
             link.click();
         }
 
-        function updateInstallationNote(id, val) {
-            const item = internetInstallations.find(i => i.id === id);
-            if(item) {
-                item.note = val;
-                saveData();
-            }
+        async function updateInstallationNote(id, val) {
+    const item = internetInstallations.find(i => i.id === id);
+    if(item) {
+        item.note = val;
+        saveData();
+        const sb = getSupabase();
+        if(sb) {
+            await sb.from('internet_installations').update({ note: val }).eq('id', id);
         }
+    }
+}
 
-        function updateInstallationTechnician(id, val) {
-            const item = internetInstallations.find(i => i.id === id);
-            if(item) {
-                item.technician = val;
-                saveData();
-            }
+async function updateInstallationTechnician(id, val) {
+    const item = internetInstallations.find(i => i.id === id);
+    if(item) {
+        item.technician = val;
+        saveData();
+        const sb = getSupabase();
+        if(sb) {
+            await sb.from('internet_installations').update({ technician: val }).eq('id', id);
         }
+    }
+}
 
-        function toggleInstallationStatus(id) {
-            const item = internetInstallations.find(i => i.id === id);
-            if(!item) return;
+async function toggleInstallationStatus(id) {
+    const item = internetInstallations.find(i => i.id === id);
+    if(!item) return;
 
-            const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toISOString().split('T')[0];
 
-            if(item.status === 'PENDING') {
-                item.status = 'COMPLETED';
-                item.completedDate = today;
-                if(!item.technician) item.technician = getActiveUser();
-                alert(`✅ Na-mark as Installed na!`);
-            } else {
-                item.status = 'PENDING';
-                item.completedDate = null;
-                alert(`🔄 Naibalik sa Pending!`);
-            }
+    if(item.status === 'PENDING') {
+        item.status = 'COMPLETED';
+        item.completedDate = today;
+        if(!item.technician) item.technician = getActiveUser();
+        alert(`✅ Na-mark as Installed na!`);
+    } else {
+        item.status = 'PENDING';
+        item.completedDate = null;
+        alert(`🔄 Naibalik sa Pending!`);
+    }
 
-            saveData();
-            renderTechnicianAnalytics();
+    saveData();
+    renderTechnicianAnalytics();
+    renderInternetInstallationView();
+
+    const sb = getSupabase();
+    if(sb) {
+        await sb.from('internet_installations').update({
+            status: item.status,
+            completed_date: item.completedDate,
+            technician: item.technician
+        }).eq('id', id);
+    }
+}
+
+async function deleteInstallationTask(id) {
+    if(getActiveRole() !== 'ADMIN' && getActiveRole() !== 'ASSISTANT_ADMIN') return;
+    if(confirm('Sigurado ka bang buburahin ang installation task na ito?')) {
+        internetInstallations = internetInstallations.filter(i => i.id !== id);
+        saveData();
+        renderInternetInstallationView();
+
+        const sb = getSupabase();
+        if(sb) {
+            await sb.from('internet_installations').delete().eq('id', id);
         }
-
-        function deleteInstallationTask(id) {
-            if(getActiveRole() !== 'ADMIN' && getActiveRole() !== 'ASSISTANT_ADMIN') return;
-            if(confirm('Sigurado ka bang buburahin ang installation task na ito?')) {
-                internetInstallations = internetInstallations.filter(i => i.id !== id);
-                saveData();
-            }
-        }
+    }
+}
 
         // ================= FIBER BREAK NOTICE & ADVISORY LOGIC =================
         function renderFiberBreakBarangayCheckboxes() {
