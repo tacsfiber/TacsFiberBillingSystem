@@ -3140,7 +3140,6 @@ TacsFiber Team and Management`;
             if(currentStatus === 'PENDING') {
                 customerComplaints[index].status = 'RESOLVED';
                 customerComplaints[index].resolvedDate = today;
-                if(!customerComplaints[index].technician) customerComplaints[index].technician = getActiveUser();
                 alert(`✅ Na-mark as Resolved na!`);
             } else {
                 customerComplaints[index].status = 'PENDING';
@@ -3640,6 +3639,9 @@ TacsFiber Team and Management`;
             if(brgyFilter !== 'ALL') list = list.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
             if(dueDayFilter !== 'ALL') list = list.filter(s => String(s.dueDay || 19) === String(dueDayFilter));
 
+            // ⭐ Salain muna para tanggalin ang mga DISCONNECTED sa lahat ng alert lists
+            list = list.filter(s => (s.status || 'ACTIVE') !== 'DISCONNECTED');
+
             const overdueList = list.filter(s => (s.dueDay || 19) < currentDay);
             const dueTodayList = list.filter(s => (s.dueDay || 19) === currentDay);
             const comingDueList = list.filter(s => {
@@ -3794,7 +3796,7 @@ TacsFiber Team and Management`;
             document.getElementById('stat-total').innerText = subscribers.length;
             document.getElementById('stat-active').innerText = subscribers.filter(s => (s.status || 'ACTIVE') === 'ACTIVE').length;
             document.getElementById('stat-suspended').innerText = subscribers.filter(s => (s.status || 'ACTIVE') === 'DISCONNECTED').length;
-            document.getElementById('stat-overdue').innerText = subscribers.filter(s => (s.balance || 0) > 0 && (s.dueDay || 19) < currentDay).length;
+            document.getElementById('stat-overdue').innerText = subscribers.filter(s => (s.status || 'ACTIVE') !== 'DISCONNECTED' && (s.balance || 0) > 0 && (s.dueDay || 19) < currentDay).length;
             document.getElementById('stat-revenue').innerText = '₱' + subscribers.reduce((acc, s) => acc + (s.monthlyPlan || 0), 0).toLocaleString();
             
             renderTechnicianAnalytics();
@@ -3804,9 +3806,17 @@ function renderOutstandingBalanceOverview() {
             const dateLabel = document.getElementById('dash-balance-date-label');
             console.log("Subscribers data length:", subscribers.length); // Tingnan natin kung may laman ang subscribers array
             if (dateLabel) {
-                const now = new Date();
-                dateLabel.innerText = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            }
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase();
+            const formattedDay = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
+            const formattedTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            dateLabel.innerHTML = `
+                ${formattedDate}<br>
+                TIME: ${formattedTime}<br>
+                TODAY: ${formattedDay}
+            `;
+        }
 
             // Boxes & Badges mapping para sa 5, 4, 3, at 2 months unpaid
             const boxes = {
@@ -4469,6 +4479,12 @@ function renderOutstandingBalanceOverview() {
             const p = document.getElementById('login-pass');
             if (p) p.type = p.type === 'password' ? 'text' : 'password';
         }
+        // ⭐ Mag-update bawat minuto para sa live time
+        setInterval(() => {
+            if (typeof renderOutstandingBalanceOverview === 'function') {
+            renderOutstandingBalanceOverview();
+            }
+        }, 60000);
     </script>
 </body>
 </html>
