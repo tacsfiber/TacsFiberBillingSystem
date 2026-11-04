@@ -181,7 +181,8 @@
             </p>
         </div>
     </div>
-<!-- MAIN APP CONTAINER -->
+
+    <!-- MAIN APP CONTAINER -->
     <div id="app-container" class="h-full flex flex-col hidden bg-gray-50">
         <header class="bg-black text-white shadow-xl z-30 shrink-0 sticky top-0 border-b border-red-950/60">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
@@ -270,32 +271,52 @@
                     </div>
                 </div>
 
-                <!-- TECHNICIAN PERFORMANCE SECTION ON DASHBOARD -->
+                <!-- CUSTOMERS WITH HIGH OUTSTANDING BALANCE SECTION -->
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                     <div class="flex justify-between items-center border-b pb-4">
                         <h3 class="text-base font-bold text-slate-800 flex items-center space-x-2">
-                            <i class="fa-solid fa-chart-line text-emerald-600"></i>
-                            <span>Technician Performance & Daily Task Evaluation</span>
+                            <i class="fa-solid fa-triangle-exclamation text-rose-600"></i>
+                            <span>CUSTOMERS WITH HIGH OUTSTANDING BALANCE</span>
                         </h3>
-                        <span id="dash-tech-month-label" class="text-xs font-bold text-slate-500 font-mono"></span>
+                        <span id="dash-balance-date-label" class="text-xs font-bold text-slate-500 font-mono"></span>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4" id="dash-tech-stats-cards"></div>
+                    <!-- 4 Unpaid Months Tier Boxes -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- 5 Months Unpaid -->
+                        <div class="bg-red-50/60 border-2 border-red-500 rounded-xl p-3 flex flex-col h-[400px]">
+                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-red-200">
+                                <span class="text-xs font-extrabold text-red-700">5 MONTHS UNPAID</span>
+                                <span id="badge-5-months" class="px-2 py-0.5 bg-red-600 text-white rounded-full text-[10px] font-bold">0</span>
+                            </div>
+                            <div id="box-5-months" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
+                        </div>
 
-                    <div class="space-y-3">
-                        <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Summary Evaluation Table by Technician (Day 1 - Day 30)</h4>
-                        <div class="overflow-x-auto border border-slate-200 rounded-xl">
-                            <table class="w-full text-left border-collapse text-xs">
-                                <thead class="bg-slate-100 text-slate-700 font-bold uppercase">
-                                    <tr>
-                                        <th class="py-3 px-4">Technician Name</th>
-                                        <th class="py-3 px-4 text-center">Number of Repaired</th>
-                                        <th class="py-3 px-4 text-center">Number of Installed</th>
-                                        <th class="py-3 px-4 text-right">Percentage Rate (%)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dash-tech-table-body" class="divide-y divide-slate-100 bg-white"></tbody>
-                            </table>
+                        <!-- 4 Months Unpaid -->
+                        <div class="bg-orange-50/60 border-2 border-orange-400 rounded-xl p-3 flex flex-col h-[400px]">
+                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-orange-200">
+                                <span class="text-xs font-extrabold text-orange-700">4 MONTHS UNPAID</span>
+                                <span id="badge-4-months" class="px-2 py-0.5 bg-orange-500 text-white rounded-full text-[10px] font-bold">0</span>
+                            </div>
+                            <div id="box-4-months" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
+                        </div>
+
+                        <!-- 3 Months Unpaid -->
+                        <div class="bg-amber-50/60 border-2 border-amber-400 rounded-xl p-3 flex flex-col h-[400px]">
+                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-amber-200">
+                                <span class="text-xs font-extrabold text-amber-700">3 MONTHS UNPAID</span>
+                                <span id="badge-3-months" class="px-2 py-0.5 bg-amber-500 text-white rounded-full text-[10px] font-bold">0</span>
+                            </div>
+                            <div id="box-3-months" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
+                        </div>
+
+                        <!-- 2 Months Unpaid -->
+                        <div class="bg-rose-50/40 border-2 border-pink-300 rounded-xl p-3 flex flex-col h-[400px]">
+                            <div class="flex justify-between items-center mb-2 pb-2 border-b border-pink-200">
+                                <span class="text-xs font-extrabold text-pink-700">2 MONTHS UNPAID</span>
+                                <span id="badge-2-months" class="px-2 py-0.5 bg-pink-500 text-white rounded-full text-[10px] font-bold">0</span>
+                            </div>
+                            <div id="box-2-months" class="space-y-2 overflow-y-auto flex-1 pr-1"></div>
                         </div>
                     </div>
                 </div>
@@ -325,7 +346,7 @@
                         </button>
                     </div>
                 </div>
-            </div>
+            </div> <!-- ⭐ Dito nagtatapos nang tama ang view-dashboard -->
 
             <!-- VIEW: INTERNET INSTALLATION -->
             <div id="view-internet-installation" class="hidden space-y-6 max-w-4xl mx-auto">
@@ -1756,6 +1777,7 @@
 
                 isDataLoaded = true;
                 filtersInitialized = false;
+                renderOutstandingBalanceOverview(); // ⭐ Idagdag mo ito rito bossing!
 
                 if (isManual) {
                     alert(`🟢 Sync Successful!\nNa-update ang data mula sa Supabase Cloud.`);
@@ -2013,6 +2035,21 @@ async function markComplaintAsResolved(complaintId) {
         console.error("Unexpected error:", err);
     }
 }
+
+async function openAppDashboard() {
+    // ... mga kasanayan sa loob ng openAppDashboard ...
+    if (!isDataLoaded) {
+        await fetchSubscribersFromSupabase();
+        await fetchComplaintsFromSupabase();
+    }
+    
+    renderNavigationTabs();
+    switchTab('dashboard');
+    
+    // ⭐ Idagdag mo ito rito para sigurado
+    renderOutstandingBalanceOverview(); 
+}
+
         async function openAppDashboard() {
             // Supabase Realtime para mag-auto update ang complaints
             const sb = getSupabase();
@@ -3761,6 +3798,86 @@ TacsFiber Team and Management`;
             document.getElementById('stat-revenue').innerText = '₱' + subscribers.reduce((acc, s) => acc + (s.monthlyPlan || 0), 0).toLocaleString();
             
             renderTechnicianAnalytics();
+        }
+
+function renderOutstandingBalanceOverview() {
+            const dateLabel = document.getElementById('dash-balance-date-label');
+            console.log("Subscribers data length:", subscribers.length); // Tingnan natin kung may laman ang subscribers array
+            if (dateLabel) {
+                const now = new Date();
+                dateLabel.innerText = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
+
+            // Boxes & Badges mapping para sa 5, 4, 3, at 2 months unpaid
+            const boxes = {
+                5: document.getElementById('box-5-months'),
+                4: document.getElementById('box-4-months'),
+                3: document.getElementById('box-3-months'),
+                2: document.getElementById('box-2-months')
+            };
+            const badges = {
+                5: document.getElementById('badge-5-months'),
+                4: document.getElementById('badge-4-months'),
+                3: document.getElementById('badge-3-months'),
+                2: document.getElementById('badge-2-months')
+            };
+
+            // I-clear muna ang laman ng bawat kahon at badge
+            Object.keys(boxes).forEach(tier => {
+                if (boxes[tier]) boxes[tier].innerHTML = '';
+                if (badges[tier]) badges[tier].innerText = '0';
+            });
+
+            let counts = { 5: 0, 4: 0, 3: 0, 2: 0 };
+
+            subscribers.forEach(sub => {
+                const balance = parseFloat(sub.balance) || 0;
+                const monthlyPlan = parseFloat(sub.monthlyPlan || sub.monthly_plan) || 600;
+                
+                // Kunin lamang ang mga kustomer na may utang
+                if (balance <= 0 || monthlyPlan <= 0) return;
+
+                // Kwentahin ang ratio ng unpaid months batay sa balance / monthlyPlan
+                let ratio = balance / monthlyPlan;
+                let tier = 0;
+
+                if (ratio >= 5) tier = 5;
+                else if (ratio >= 4) tier = 4;
+                else if (ratio >= 3) tier = 3;
+                else if (ratio >= 2) tier = 2;
+
+                if (tier >= 2 && boxes[tier]) {
+                    counts[tier]++;
+                    
+                    // Magdagdag ng magandang card item para sa bawat kustomer na delinquent
+                    boxes[tier].innerHTML += `
+                        <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-xs space-y-1.5 text-xs hover:border-indigo-300 transition">
+                            <div class="flex justify-between items-center">
+                                <span class="font-mono font-bold text-indigo-600">${sub.id}</span>
+                                <span class="font-black text-rose-600 text-sm">₱${balance.toLocaleString()}</span>
+                            </div>
+                            <div class="font-bold text-slate-900 truncate">${sub.name}</div>
+                            <div class="flex justify-between items-center text-[11px] text-slate-500 border-t border-slate-100 pt-1">
+                                <span><i class="fa-solid fa-location-dot text-rose-500 mr-1"></i>${sub.barangay || 'Poblacion'}</span>
+                                <span class="font-mono font-semibold text-slate-600">${sub.contact || 'N/A'}</span>
+                            </div>
+                            <div class="flex justify-end pt-1 space-x-1">
+                                <button onclick="openPaymentModal('${sub.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-xs cursor-pointer transition flex items-center space-x-1">
+                                    <i class="fa-solid fa-peso-sign"></i><span>Collect</span>
+                                </button>
+                                <button onclick="openNotificationModal('${sub.id}', '${tier} Months Unpaid')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-lg text-[10px] font-bold shadow-xs cursor-pointer transition" title="Send SMS Reminder">
+                                    <i class="fa-solid fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            // I-update ang total count sa bawat badge header
+            Object.keys(counts).forEach(tier => {
+                if (badges[tier]) badges[tier].innerText = counts[tier];
+            });
         }
 
         function openEditCustomerModal(subId) {
