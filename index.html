@@ -1087,6 +1087,12 @@
 
             <!-- AUDIT & REPORTS VIEW -->
             <div id="view-audit-reports" class="hidden space-y-6">
+                <!-- MGA SUB-TABS (Para mamili kung Collection Audit o Sales & Expenses) -->
+            <div class="flex space-x-2 border-b border-slate-200 mb-4 bg-white p-3 rounded-xl shadow-sm">
+                <button onclick="switchAuditSubTab('collection')" id="audit-tab-collection" class="px-4 py-2 font-bold text-xs rounded-lg border border-indigo-600 bg-indigo-600 text-white transition">Collection Audit</button>
+                <button onclick="switchAuditSubTab('sales-expenses')" id="audit-tab-sales" class="px-4 py-2 font-bold text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition">Sales & Expenses Summary</button>
+            </div>
+                <div id="collection-audit-section" class="space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
                     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b pb-4">
                         <div>
@@ -1147,6 +1153,57 @@
                     </div>
                 </div>
             </div>
+
+<!-- SALES & EXPENSES SUMMARY SECTION -->
+    <div id="sales-expenses-section" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                <span>📊</span> Record Sales, Expenses & Net Income
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Total Sales (₱)</label>
+                    <input type="number" id="input-total-sales" step="0.01" oninput="calculateNetIncome()" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Total Expenses (₱)</label>
+                    <input type="number" id="input-total-expenses" step="0.01" oninput="calculateNetIncome()" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-600">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Net Income (Total Sales - Expenses)</label>
+                    <input type="text" id="input-net-income" readonly class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-extrabold text-indigo-600 outline-none" placeholder="₱0.00">
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button onclick="saveSalesExpensesReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-sm flex items-center gap-2 transition cursor-pointer">
+                    💾 Save Report to Supabase
+                </button>
+            </div>
+        </div>
+
+        <!-- HISTORY TABLE -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-4">📋 Saved Sales & Expenses History Log</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
+                            <th class="p-3 font-bold">Date & Time Finished</th>
+                            <th class="p-3 font-bold">Total Sales</th>
+                            <th class="p-3 font-bold">Total Expenses</th>
+                            <th class="p-3 font-bold">Net Income</th>
+                            <th class="p-3 font-bold">Encoded By</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-expenses-history-table">
+                        <tr><td colspan="5" class="text-center text-slate-400 py-6 italic">Awan pay a record.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
             <!-- USERS VIEW -->
             <div id="view-users" class="hidden space-y-6 max-w-3xl mx-auto">
@@ -4507,6 +4564,146 @@ function renderOutstandingBalanceOverview() {
             renderOutstandingBalanceOverview();
             }
         }, 60000);
+        // Function para sa paglipat ng sub-tab sa Audit & Reports
+function switchAuditSubTab(tab) {
+    const collectionSec = document.getElementById('collection-audit-section');
+    const salesSec = document.getElementById('sales-expenses-section');
+    const btnCol = document.getElementById('audit-tab-collection');
+    const btnSales = document.getElementById('audit-tab-sales');
+
+    if (tab === 'collection') {
+        if(salesSec) salesSec.classList.add('hidden');
+        if(collectionSec) collectionSec.classList.remove('hidden');
+        if(btnCol) {
+            btnCol.className = "px-4 py-2 font-bold text-xs rounded-lg border border-indigo-600 bg-indigo-600 text-white transition";
+        }
+        if(btnSales) {
+            btnSales.className = "px-4 py-2 font-bold text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition";
+        }
+    } else {
+        if(collectionSec) collectionSec.classList.add('hidden');
+        if(salesSec) salesSec.classList.remove('hidden');
+        if(btnSales) {
+            btnSales.className = "px-4 py-2 font-bold text-xs rounded-lg border border-indigo-600 bg-indigo-600 text-white transition";
+        }
+        if(btnCol) {
+            btnCol.className = "px-4 py-2 font-bold text-xs rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition";
+        }
+        fetchSalesExpensesReports();
+    }
+}
+
+// Function para kusang makalkula ang Net Income (Total Sales - Total Expenses)
+function calculateNetIncome() {
+    const sales = parseFloat(document.getElementById('input-total-sales').value) || 0;
+    const expenses = parseFloat(document.getElementById('input-total-expenses').value) || 0;
+    const net = sales - expenses;
+    const netIncomeInput = document.getElementById('input-net-income');
+    
+    netIncomeInput.value = '₱' + net.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    
+    if (net < 0) {
+        netIncomeInput.className = "w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-extrabold text-rose-600 outline-none";
+    } else {
+        netIncomeInput.className = "w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-extrabold text-indigo-600 outline-none";
+    }
+}
+
+async function saveSalesExpensesReport() {
+    console.log("=== SAVE REPORT STARTED ===");
+    try {
+        const salesInput = document.getElementById('input-total-sales');
+        const expensesInput = document.getElementById('input-total-expenses');
+        
+        const sales = parseFloat(salesInput ? salesInput.value : 0) || 0;
+        const expenses = parseFloat(expensesInput ? expensesInput.value : 0) || 0;
+        const net = sales - expenses;
+        const encodedBy = typeof currentUser !== 'undefined' ? currentUser : 'Ronel Tacocong';
+        const now = new Date().toISOString();
+
+        if (sales === 0 && expenses === 0) {
+            alert('Paki-input ang valid na kantidad para sa Sales o Expenses.');
+            return;
+        }
+
+        // Suriin ang iba't ibang posibleng pangalan ng client sa global o window scope
+        const activeClient = typeof sb !== 'undefined' ? sb : 
+                             (typeof window.sb !== 'undefined' ? window.sb : 
+                             (typeof supabase !== 'undefined' ? supabase : 
+                             (typeof window.supabase !== 'undefined' ? window.supabase : null)));
+
+        if (!activeClient || typeof activeClient.from !== 'function') {
+            alert('Error: Walang nakitang active Supabase client.');
+            console.error("Supabase client is missing or invalid!");
+            return;
+        }
+
+        console.log("Attempting insert to Supabase table: sales_expenses_reports");
+        const { data, error } = await activeClient
+            .from('sales_expenses_reports')
+            .insert([{
+                total_sales: sales,
+                total_expenses: expenses,
+                net_income: net,
+                created_by: encodedBy,
+                created_at: now
+            }]);
+
+        if (error) {
+            console.error('Supabase Insert Error:', error);
+            alert('Nabigo na i-save sa Supabase: ' + (error.message || JSON.stringify(error)));
+        } else {
+            console.log('Insert successful:', data);
+            alert('Tagumpay na nai-save at nai-sync sa Supabase!');
+            if (salesInput) salesInput.value = '';
+            if (expensesInput) expensesInput.value = '';
+            const netInput = document.getElementById('input-net-income');
+            if (netInput) netInput.value = '';
+            fetchSalesExpensesReports();
+        }
+    } catch (err) {
+        console.error('Unexpected Exception in saveSalesExpensesReport:', err);
+        alert('May naganap na unexpected error: ' + err.message);
+    }
+}
+
+async function fetchSalesExpensesReports() {
+    const activeClient = typeof sb !== 'undefined' ? sb : 
+                         (typeof window.sb !== 'undefined' ? window.sb : 
+                         (typeof supabase !== 'undefined' ? supabase : 
+                         (typeof window.supabase !== 'undefined' ? window.supabase : null)));
+                         
+    if (!activeClient || typeof activeClient.from !== 'function') return;
+
+    const { data, error } = await activeClient
+        .from('sales_expenses_reports')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    const tbody = document.getElementById('sales-expenses-history-table');
+    if (!tbody) return;
+
+    if (error || !data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-slate-400 py-6 italic">Wala pang record ng sales at expenses.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = data.map(row => {
+        const dateObj = new Date(row.created_at);
+        const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+        const formattedTime = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+        return `
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
+                <td class="p-3 font-mono font-bold text-slate-700">${formattedDate} - ${formattedTime}</td>
+                <td class="p-3 font-bold text-emerald-600">₱${Number(row.total_sales).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="p-3 font-bold text-rose-600">₱${Number(row.total_expenses).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="p-3 font-extrabold text-indigo-600">₱${Number(row.net_income).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+                <td class="p-3 font-medium text-slate-600">${row.created_by || 'Admin'}</td>
+            </tr>
+        `;
+    }).join('');
+}
     </script>
 </body>
 </html>
