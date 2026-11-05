@@ -842,12 +842,52 @@
                         </div>
                         
                         <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                            <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                                <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-filter text-emerald-600 mr-1"></i>Barangay:</label>
-                                <select id="masterBrgyFilter" onchange="renderCustomersListTable()" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                                    <option value="ALL">All Barangays</option>
-                                </select>
-                            </div>
+                            <!-- BARANGAY FILTER -->
+                <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-filter text-emerald-600 mr-1"></i>Barangay:</label>
+                    <select id="masterBrgyFilter" onchange="renderCustomersListTable()" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+                        <option value="ALL">All Barangays</option>
+                    </select>
+                </div>
+
+                <!-- DUE DATE FILTER (1 TO 31) -->
+                <div class="flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <label class="text-xs font-bold text-slate-700"><i class="fa-solid fa-calendar-days text-amber-500 mr-1"></i>Due Date:</label>
+                    <select id="masterDueDateFilter" onchange="renderCustomersListTable()" class="border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer">
+                        <option value="ALL">All Due Dates</option>
+                        <option value="1">Day 1</option>
+                        <option value="2">Day 2</option>
+                        <option value="3">Day 3</option>
+                        <option value="4">Day 4</option>
+                        <option value="5">Day 5</option>
+                        <option value="6">Day 6</option>
+                        <option value="7">Day 7</option>
+                        <option value="8">Day 8</option>
+                        <option value="9">Day 9</option>
+                        <option value="10">Day 10</option>
+                        <option value="11">Day 11</option>
+                        <option value="12">Day 12</option>
+                        <option value="13">Day 13</option>
+                        <option value="14">Day 14</option>
+                        <option value="15">Day 15</option>
+                        <option value="16">Day 16</option>
+                        <option value="17">Day 17</option>
+                        <option value="18">Day 18</option>
+                        <option value="19">Day 19</option>
+                        <option value="20">Day 20</option>
+                        <option value="21">Day 21</option>
+                        <option value="22">Day 22</option>
+                        <option value="23">Day 23</option>
+                        <option value="24">Day 24</option>
+                        <option value="25">Day 25</option>
+                        <option value="26">Day 26</option>
+                        <option value="27">Day 27</option>
+                        <option value="28">Day 28</option>
+                        <option value="29">Day 29</option>
+                        <option value="30">Day 30</option>
+                        <option value="31">Day 31</option>
+                    </select>
+                </div>
 
                             <input type="text" id="cust-list-search" oninput="renderCustomersListTable()" placeholder="Search name..." class="border border-slate-300 rounded-xl px-3.5 py-2 text-xs w-full sm:w-48 shadow-sm">
                         </div>
@@ -3663,7 +3703,8 @@ TacsFiber Team and Management`;
 
             const search = document.getElementById('cust-list-search') ? document.getElementById('cust-list-search').value.toLowerCase().trim() : '';
             const brgyFilter = document.getElementById('masterBrgyFilter') ? document.getElementById('masterBrgyFilter').value : 'ALL';
-
+            // KUNIN ANG VALUE NG DUE DATE FILTER
+            const dueDateFilter = document.getElementById('masterDueDateFilter') ? document.getElementById('masterDueDateFilter').value : 'ALL';
             const tbody = document.getElementById('customers-list-table-body');
             if(!tbody) return;
             tbody.innerHTML = '';
@@ -3671,6 +3712,14 @@ TacsFiber Team and Management`;
             let filtered = subscribers;
 
             if(brgyFilter !== 'ALL') filtered = filtered.filter(s => (s.barangay || 'Poblacion') === brgyFilter);
+            // FILTER SA DUE DATE (1 HANGGANG 31)
+            if(dueDateFilter !== 'ALL') {
+                filtered = filtered.filter(s => {
+                    const rawDue = (s.due_day || s.dueDay || '').toString();
+                    const subDueDay = parseInt(rawDue.replace(/\D/g, ''), 10);
+                    return subDueDay === parseInt(dueDateFilter, 10);
+                });
+            }
             if(search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search));
 
             if(filtered.length === 0) {
