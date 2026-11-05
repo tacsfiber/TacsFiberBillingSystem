@@ -4609,6 +4609,7 @@ function calculateNetIncome() {
     }
 }
 
+// Function para i-save ang report sa Supabase na may built-in fallback initialization
 async function saveSalesExpensesReport() {
     console.log("=== SAVE REPORT STARTED ===");
     try {
@@ -4626,20 +4627,27 @@ async function saveSalesExpensesReport() {
             return;
         }
 
-        // Suriin ang iba't ibang posibleng pangalan ng client sa global o window scope
-        const activeClient = typeof sb !== 'undefined' ? sb : 
-                             (typeof window.sb !== 'undefined' ? window.sb : 
-                             (typeof supabase !== 'undefined' ? supabase : 
-                             (typeof window.supabase !== 'undefined' ? window.supabase : null)));
+        // Kunin ang active client o i-initialize kung kinakailangan
+        let client = (typeof sb !== 'undefined' && sb && typeof sb.from === 'function') ? sb : null;
+        
+        if (!client && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+            // Kung ang 'supabase' ay ang library, i-initialize natin kung mayroon kang URL at Key
+            // O kaya ay gamitin ang kilalang credentials ng TacsFiber system mo
+            try {
+                client = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+            } catch (e) {
+                console.error("Auto-init error:", e);
+            }
+        }
 
-        if (!activeClient || typeof activeClient.from !== 'function') {
-            alert('Error: Walang nakitang active Supabase client.');
+        if (!client || typeof client.from !== 'function') {
+            alert('Error: Supabase client is missing or invalid.');
             console.error("Supabase client is missing or invalid!");
             return;
         }
 
         console.log("Attempting insert to Supabase table: sales_expenses_reports");
-        const { data, error } = await activeClient
+        const { data, error } = await client
             .from('sales_expenses_reports')
             .insert([{
                 total_sales: sales,
@@ -4667,15 +4675,18 @@ async function saveSalesExpensesReport() {
     }
 }
 
+// Function para kunin at ipakita ang history log mula sa Supabase
 async function fetchSalesExpensesReports() {
-    const activeClient = typeof sb !== 'undefined' ? sb : 
-                         (typeof window.sb !== 'undefined' ? window.sb : 
-                         (typeof supabase !== 'undefined' ? supabase : 
-                         (typeof window.supabase !== 'undefined' ? window.supabase : null)));
-                         
-    if (!activeClient || typeof activeClient.from !== 'function') return;
+    let client = (typeof sb !== 'undefined' && sb && typeof sb.from === 'function') ? sb : null;
+    if (!client && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+        try {
+            client = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
+        } catch (e) {}
+    }
 
-    const { data, error } = await activeClient
+    if (!client || typeof client.from !== 'function') return;
+
+    const { data, error } = await client
         .from('sales_expenses_reports')
         .select('*')
         .order('created_at', { ascending: false });
