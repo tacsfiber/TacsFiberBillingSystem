@@ -4609,7 +4609,6 @@ function calculateNetIncome() {
     }
 }
 
-// Function para i-save ang report sa Supabase na may built-in fallback initialization
 async function saveSalesExpensesReport() {
     console.log("=== SAVE REPORT STARTED ===");
     try {
@@ -4627,17 +4626,12 @@ async function saveSalesExpensesReport() {
             return;
         }
 
-        // Kunin ang active client o i-initialize kung kinakailangan
-        let client = (typeof sb !== 'undefined' && sb && typeof sb.from === 'function') ? sb : null;
-        
-        if (!client && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-            // Kung ang 'supabase' ay ang library, i-initialize natin kung mayroon kang URL at Key
-            // O kaya ay gamitin ang kilalang credentials ng TacsFiber system mo
-            try {
-                client = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
-            } catch (e) {
-                console.error("Auto-init error:", e);
-            }
+        const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
+
+        let client = null;
+        if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+            client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         }
 
         if (!client || typeof client.from !== 'function') {
@@ -4675,13 +4669,14 @@ async function saveSalesExpensesReport() {
     }
 }
 
-// Function para kunin at ipakita ang history log mula sa Supabase
 async function fetchSalesExpensesReports() {
-    let client = (typeof sb !== 'undefined' && sb && typeof sb.from === 'function') ? sb : null;
-    if (!client && typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-        try {
-            client = supabase.createClient('YOUR_SUPABASE_URL', 'YOUR_SUPABASE_ANON_KEY');
-        } catch (e) {}
+    const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
+
+    let client = null;
+    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+        // Naka-ayos na dito ang quotes para sa URL at Anon Key
+        client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     }
 
     if (!client || typeof client.from !== 'function') return;
