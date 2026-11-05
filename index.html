@@ -1232,16 +1232,14 @@
 
             <!-- BACKUP VIEW -->
             <div id="view-backup" class="hidden space-y-6 max-w-3xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6 space-y-6 text-slate-800">
                     <div>
-                        <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center space-x-2">
-                            <i class="fa-solid fa-database text-purple-600"></i><span>Batch Import & Database Backup Management</span>
-                        </h3>
+                        <h3 class="text-base font-bold text-slate-800 mb-1">Batch Import & Database Backup Management</h3>
                         <p class="text-xs text-slate-500">I-backup ang buong sistema o mag-import ng master list ng kustomer patungo sa iyong bagong Supabase account.</p>
                     </div>
 
                     <!-- EXPORT CARD -->
-                    <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <h4 class="text-xs font-bold text-indigo-900 uppercase">1. Export Database Backup (JSON)</h4>
                             <p class="text-xs text-slate-600 mt-0.5">I-download ang kasalukuyang kopya ng mga kustomer, payment logs, at system records.</p>
@@ -1252,19 +1250,18 @@
                     </div>
 
                     <!-- IMPORT CARD -->
-                    <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-3">
+                    <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50 space-y-3">
                         <div>
                             <h4 class="text-xs font-bold text-emerald-900 uppercase">2. Batch Import / Restore sa Bagong Supabase</h4>
                             <p class="text-xs text-slate-600 mt-0.5">Mag-upload ng .json backup file para i-restore o i-migrate ang mga kustomer sa bagong database.</p>
                         </div>
                         <div class="flex items-center space-x-3 pt-2">
-                            <input type="file" id="backup-file-input" accept=".json" onchange="importJsonBackup(event)" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                            <input type="file" id="backup-file-input" accept=".json" onchange="importJsonBackup(event)" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white cursor-pointer">
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
     <!-- MARK EVALUATED MODAL -->
     <div id="mark-evaluated-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
