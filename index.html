@@ -1232,9 +1232,35 @@
 
             <!-- BACKUP VIEW -->
             <div id="view-backup" class="hidden space-y-6 max-w-3xl mx-auto">
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <h3 class="text-base font-bold text-slate-800 mb-1">Database Backup</h3>
-                    <button onclick="exportJsonBackup()" class="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg text-xs cursor-pointer">Export JSON Backup</button>
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center space-x-2">
+                            <i class="fa-solid fa-database text-purple-600"></i><span>Batch Import & Database Backup Management</span>
+                        </h3>
+                        <p class="text-xs text-slate-500">I-backup ang buong sistema o mag-import ng master list ng kustomer patungo sa iyong bagong Supabase account.</p>
+                    </div>
+
+                    <!-- EXPORT CARD -->
+                    <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-indigo-900 uppercase">1. Export Database Backup (JSON)</h4>
+                            <p class="text-xs text-slate-600 mt-0.5">I-download ang kasalukuyang kopya ng mga kustomer, payment logs, at system records.</p>
+                        </div>
+                        <button onclick="exportJsonBackup()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs shadow cursor-pointer transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-arrow-down"></i><span>Export JSON Backup</span>
+                        </button>
+                    </div>
+
+                    <!-- IMPORT CARD -->
+                    <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-3">
+                        <div>
+                            <h4 class="text-xs font-bold text-emerald-900 uppercase">2. Batch Import / Restore sa Bagong Supabase</h4>
+                            <p class="text-xs text-slate-600 mt-0.5">Mag-upload ng .json backup file para i-restore o i-migrate ang mga kustomer sa bagong database.</p>
+                        </div>
+                        <div class="flex items-center space-x-3 pt-2">
+                            <input type="file" id="backup-file-input" accept=".json" onchange="importJsonBackup(event)" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer">
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -4703,6 +4729,61 @@ async function fetchSalesExpensesReports() {
             </tr>
         `;
     }).join('');
+}
+async function importJsonBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const backupData = JSON.parse(e.target.result);
+            if (!backupData.subscribers || !Array.isArray(backupData.subscribers)) {
+                alert("⚠️ Invalid backup file format! Walang 'subscribers' array na nakita.");
+                return;
+            }
+
+            if (!confirm(`Sigurado ka bang i-import ang ${backupData.subscribers.length} subscribers at mga kasamang records sa iyong bagong Supabase account?`)) {
+                return;
+            }
+
+            const sb = getSupabase();
+            if (!sb) {
+                alert("⚠️ Walang active Supabase client connection.");
+                return;
+            }
+
+            let successCount = 0;
+            for (let sub of backupData.subscribers) {
+                // I-map ang fields ayon sa Supabase table columns kung kinakailangan
+                const payload = {
+                    id: sub.id,
+                    name: sub.name,
+                    barangay: sub.barangay || 'Poblacion',
+                    address: sub.address || 'N/A',
+                    contact: sub.contact || 'N/A',
+                    monthly_plan: parseFloat(sub.monthlyPlan || sub.monthly_plan) || 600,
+                    due_day: parseInt(sub.dueDay || sub.due_day) || 19,
+                    date_installed: sub.dateInstalled || sub.date_installed || new Date().toISOString().split('T')[0],
+                    balance: parseFloat(sub.balance) || 0,
+                    status: sub.status || 'ACTIVE',
+                    assigned_collector: sub.assignedCollector || sub.assigned_collector || 'Unassigned',
+                    last_billed_month: sub.lastBilledMonth || sub.last_billed_month || 'October 2026',
+                    date_disconnected: sub.dateDisconnected || sub.date_disconnected || null
+                };
+
+                const { error } = await sb.from('subscribers').upsert([payload]);
+                if (!error) successCount++;
+            }
+
+            alert(`🟢 Batch Import Successful!\nMatagumpay na nai-upload at na-sync ang ${successCount} kustomer sa Supabase.`);
+            await fetchSubscribersFromSupabase(true);
+            refreshAllViewsUIOnly();
+        } catch (err) {
+            alert("❌ Error sa pag-parse o pag-import ng JSON file: " + err.message);
+        }
+    };
+    reader.readAsText(file);
 }
     </script>
 </body>
