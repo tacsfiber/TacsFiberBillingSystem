@@ -4626,22 +4626,20 @@ async function saveSalesExpensesReport() {
             return;
         }
 
-        const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
+        // Suriin ang iba't ibang posibleng pangalan ng client sa global o window scope
+        const activeClient = typeof sb !== 'undefined' ? sb : 
+                             (typeof window.sb !== 'undefined' ? window.sb : 
+                             (typeof supabase !== 'undefined' ? supabase : 
+                             (typeof window.supabase !== 'undefined' ? window.supabase : null)));
 
-        let client = null;
-        if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-            client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-
-        if (!client || typeof client.from !== 'function') {
-            alert('Error: Supabase client is missing or invalid.');
+        if (!activeClient || typeof activeClient.from !== 'function') {
+            alert('Error: Walang nakitang active Supabase client.');
             console.error("Supabase client is missing or invalid!");
             return;
         }
 
         console.log("Attempting insert to Supabase table: sales_expenses_reports");
-        const { data, error } = await client
+        const { data, error } = await activeClient
             .from('sales_expenses_reports')
             .insert([{
                 total_sales: sales,
@@ -4670,18 +4668,14 @@ async function saveSalesExpensesReport() {
 }
 
 async function fetchSalesExpensesReports() {
-    const SUPABASE_URL = 'https://evtbcmfjekyjhdvpghfp.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_PzLKxrujsq8TnG8xgOfJJw_uBFyaqi2';
+    const activeClient = typeof sb !== 'undefined' ? sb : 
+                         (typeof window.sb !== 'undefined' ? window.sb : 
+                         (typeof supabase !== 'undefined' ? supabase : 
+                         (typeof window.supabase !== 'undefined' ? window.supabase : null)));
+                         
+    if (!activeClient || typeof activeClient.from !== 'function') return;
 
-    let client = null;
-    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
-        // Naka-ayos na dito ang quotes para sa URL at Anon Key
-        client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
-
-    if (!client || typeof client.from !== 'function') return;
-
-    const { data, error } = await client
+    const { data, error } = await activeClient
         .from('sales_expenses_reports')
         .select('*')
         .order('created_at', { ascending: false });
