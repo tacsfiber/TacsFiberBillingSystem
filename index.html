@@ -5180,7 +5180,7 @@ async function loadSalesExpensesHistory() {
     if (!sb) return;
 
     const { data, error } = await sb
-        .from('sales_expenses_reports')
+        .from('sales_expenses_reports') // Siguraduhing ito ang table name
         .select('*')
         .order('date_finished', { ascending: false });
 
@@ -5189,23 +5189,8 @@ async function loadSalesExpensesHistory() {
         return;
     }
 
-    console.log("History reports mula Supabase:", data);
-
-    // Hanapin ang table sa ilalim ng Saved Sales & Expenses History Log
-    const tables = document.querySelectorAll('table');
-    let targetTable = null;
-
-    // Hanapin ang table na may ganitong mga header
-    tables.forEach(tbl => {
-        if (tbl.innerText.includes('TOTAL SALES') && tbl.innerText.includes('ENCODED BY')) {
-            targetTable = tbl;
-        }
-    });
-
-    if (!targetTable) {
-        console.warn("Hindi natagpuan ang history table.");
-        return;
-    }
+    const targetTable = document.getElementById('sales-expenses-history-table'); // I-adjust ayon sa ID ng table mo
+    if (!targetTable) return;
 
     let tbody = targetTable.querySelector('tbody');
     if (!tbody) {
@@ -5214,7 +5199,6 @@ async function loadSalesExpensesHistory() {
     }
 
     tbody.innerHTML = '';
-
     if (data && data.length > 0) {
         data.forEach(row => {
             const formattedDate = row.date_finished ? new Date(row.date_finished).toLocaleString() : '';
