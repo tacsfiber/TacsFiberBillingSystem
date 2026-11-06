@@ -4930,63 +4930,60 @@ async function importJsonBackup(event) {
 async function loadSalesAndIncomeSummary() {
     const sb = typeof getSupabase === 'function' ? getSupabase() : null;
     if (!sb) {
-        console.error("Supabase client is not available.");
+        console.error("Wala koneksyon sa Supabase.");
         return;
     }
 
-    const startDate = document.getElementById('audit-start-date')?.value;
-    const endDate = document.getElementById('audit-end-date')?.value;
+    const rawStartDate = document.getElementById('audit-start-date')?.value || '';
+    const rawEndDate = document.getElementById('audit-end-date')?.value || '';
 
-    // Kunin ang data nang direkta mula sa 'payments' table sa Supabase
-    let { data, error } = await sb.from('payments').select('*');
+    console.log("UI Date Filter Input -> From:", rawStartDate, "To:", rawEndDate);
+
+    // Kumuha galing sa 'payment_logs' table sa Supabase
+    let { data, error } = await sb.from('payment_logs').select('*');
 
     if (error) {
-        console.error("Error sa pagkuha ng payments data mula sa Supabase:", error);
-        // Fallback kung sakaling sa payment_logs naman nakasalang
-        const res2 = await sb.from('payment_logs').select('*');
-        if (!res2.error && res2.data) {
-            data = res2.data;
-        } else {
-            return;
-        }
+        console.error("Error sa pagkuha ng payment_logs:", error);
+        return;
     }
+
+    if (!data || data.length === 0) {
+        console.warn("Walang nakitang data sa payment_logs table!");
+        return;
+    }
+
+    console.log("Lahat ng nakuha galing payment_logs:", data);
 
     let ronelTotalSales = 0;
     let rolandoTotalSales = 0;
 
-    if (data && data.length > 0) {
-        data.forEach((row) => {
-            // Gamitin ang 'payment_date' galing sa Supabase payments table
-            const rowDate = String(
-                row.payment_date || row.date_paid || row.created_at || ''
-            ).split('T')[0];
+    data.forEach((row, index) => {
+        const rawDate = row.payment_date || row.date_paid || row.created_at || '';
+        const rowDateStr = String(rawDate).split('T')[0].trim();
+        
+        const collector = String(
+            row.collected_by || row.encoder || row.collector || ''
+        ).toLowerCase().trim();
 
-            // Gamitin ang 'collected_by' kung saan nakalagay ang pangalan nina Ronel o Rolando
-            const collector = String(
-                row.collected_by || row.encoder || row.collector || ''
-            ).toLowerCase().trim();
+        const amount = parseFloat(
+            row.amount_paid || row.amount || row.payment_amount || 0
+        ) || 0;
 
-            // Gamitin ang 'amount_paid' o 'amount' para sa halaga ng benta
-            const amount = parseFloat(
-                row.amount_paid || row.amount || row.payment_amount || 0
-            ) || 0;
+        console.log(`Row ${index}: Date = ${rowDateStr}, Collector = ${collector}, Amount = ${amount}`);
 
-            // Date Filter Check (From at To)
-            if (startDate && rowDate && rowDate < startDate) return;
-            if (endDate && rowDate && rowDate > endDate) return;
+        // Kung may nilagay na filter, i-check natin
+        if (rawStartDate && rowDateStr < rawStartDate) return;
+        if (rawEndDate && rowDateStr > rawEndDate) return;
 
-            // Salain kung sino ang kumolekta
-            if (collector.includes('ronel')) {
-                ronelTotalSales += amount;
-            } else if (collector.includes('rolando')) {
-                rolandoTotalSales += amount;
-            }
-        });
-    }
+        if (collector.includes('ronel')) {
+            ronelTotalSales += amount;
+        } else if (collector.includes('rolando')) {
+            rolandoTotalSales += amount;
+        }
+    });
 
-    console.log("Supabase Payments Totals -> Ronel:", ronelTotalSales, "| Rolando:", rolandoTotalSales);
+    console.log("Final Computed -> Ronel:", ronelTotalSales, "| Rolando:", rolandoTotalSales);
 
-    // I-display ang mga nakolektang halaga sa kani-kanilang kahon
     const ronelBox = document.getElementById('ronel-sales-box');
     const rolandoBox = document.getElementById('rolando-sales-box');
     const totalSalesInput = document.getElementById('input-total-sales');
@@ -4998,13 +4995,10 @@ async function loadSalesAndIncomeSummary() {
         rolandoBox.innerText = `₱${rolandoTotalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
-    // Ilagay ang pinagsamang Total Sales sa input field
-    const combinedSales = ronelTotalSales + rolandoTotalSales;
     if (totalSalesInput) {
-        totalSalesInput.value = combinedSales.toFixed(2);
+        totalSalesInput.value = (ronelTotalSales + rolandoTotalSales).toFixed(2);
     }
 
-    // Awtomatikong i-trigger ang Net Income calculation
     if (typeof calculateSalesAndExpenses === 'function') {
         calculateSalesAndExpenses();
     }
@@ -5057,25 +5051,27 @@ async function saveSalesReportToSupabase() {
         return;
     }
 
-    // Kunin ang mga halaga mula sa UI inputs/boxes
-    const startDate = document.getElementById('audit-start-date')?.value || '';
-    const endDate = document.getElementById('audit-end-date')?.value || '';
+    const startDate = document.getElementById('audit-start-date')?.value;
+    const endDate = document.getElementById('audit-end-date')?.value;
     
+    // Siguraduhing may laman ang petsa bago i-save para maiwasan ang date format error
+    if (!startDate || !endDate) {
+        alert("Pakilagay muna ang 'From' at 'To' dates sa Audit Date Filter bago mag-save.");
+        return;
+    }
+
     const totalSales = parseFloat(document.getElementById('input-total-sales')?.value) || 0;
     
-    // Kunin ang Total Expenses (kunin ang text mula sa expenses box at alisin ang '₱')
-    const totalExpensesElem = document.querySelector('.text-red-600, #total-expenses-display') || document.querySelector("span:contains('₱')"); 
-    // O kaya ay kunin sa element kung saan nakalagay ang total expenses:
+    // Kunin ang Total Expenses mula sa display box
     let totalExpenses = 0;
-    const expensesText = document.getElementById('total-expenses-box')?.innerText || document.querySelector('.text-red-600')?.innerText || '0';
-    totalExpenses = parseFloat(expensesText.replace(/[^\d.]/g, '')) || 0;
+    const expensesElem = document.querySelector('.text-red-600') || document.getElementById('total-expenses-display');
+    if (expensesElem) {
+        totalExpenses = parseFloat(expensesElem.innerText.replace(/[^\d.]/g, '')) || 0;
+    }
 
     const netIncome = totalSales - totalExpenses;
-
-    // Kunin ang pangalan ng admin/encoder na nakalagay sa itaas (Ronel Tacocong)
     const encodedBy = "Ronel Tacocong"; 
 
-    // I-prepare ang data para sa 'sales_expenses_reports' table
     const reportData = {
         date_from: startDate,
         date_to: endDate,
@@ -5096,13 +5092,59 @@ async function saveSalesReportToSupabase() {
         console.error("Error sa pag-save ng report:", error);
         alert("Nabigo sa pag-save ng report: " + error.message);
     } else {
-        alert("Tagumpay na na-save ang Sales & Expenses Report sa Supabase!");
-        // Kung may function ka para i-load ang history log, tawagin natin dito
-        if (typeof loadSalesExpensesHistory === 'function') {
-            loadSalesExpensesHistory();
-        }
+        alert("Tagumpay na na-save ang Sales & Expenses Report!");
+        loadSalesExpensesHistory(); // I-refresh ang history log table sa ibaba
     }
 }
+
+// Function para i-load at ipakita ang mga nakaraang ulat sa History Log table sa UI
+async function loadSalesExpensesHistory() {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (!sb) return;
+
+    const { data, error } = await sb
+        .from('sales_expenses_reports')
+        .select('*')
+        .order('date_finished', { ascending: false });
+
+    if (error) {
+        console.error("Error sa pagkuha ng history reports:", error);
+        return;
+    }
+
+    // Hanapin ang table body kung saan nakalagay ang history log
+    // (Siguraduhing may id kang `sales-history-tbody` o katulad nito sa table body sa ibaba)
+    const tbody = document.getElementById('sales-history-tbody') || document.querySelector('#saved-sales-expenses-history-log tbody');
+    
+    if (!tbody) {
+        console.warn("Hindi natagpuan ang history table body sa UI.");
+        return;
+    }
+
+    tbody.innerHTML = '';
+
+    if (data && data.length > 0) {
+        data.forEach(row => {
+            const formattedDate = row.date_finished ? new Date(row.date_finished).toLocaleString() : '';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-4 py-2 border-b">${formattedDate}</td>
+                <td class="px-4 py-2 border-b">₱${parseFloat(row.total_sales || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="px-4 py-2 border-b">₱${parseFloat(row.total_expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="px-4 py-2 border-b">₱${parseFloat(row.net_income || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="px-4 py-2 border-b">${row.encoded_by || 'Ronel Tacocong'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } else {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Wala pang record ng sales at expenses.</td></tr>`;
+    }
+}
+
+// Tawagin ito habang nagloload ang pahina para kusang lumitaw ang nakaraang history
+window.addEventListener('DOMContentLoaded', () => {
+    loadSalesExpensesHistory();
+});
     </script>
 </body>
 </html>
