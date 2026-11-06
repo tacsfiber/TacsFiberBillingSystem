@@ -5050,6 +5050,59 @@ function calculateSalesAndExpenses() {
         displayNetIncome.innerText = `₱${netIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 }
+async function saveSalesReportToSupabase() {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (!sb) {
+        alert("Wala koneksyon sa Supabase!");
+        return;
+    }
+
+    // Kunin ang mga halaga mula sa UI inputs/boxes
+    const startDate = document.getElementById('audit-start-date')?.value || '';
+    const endDate = document.getElementById('audit-end-date')?.value || '';
+    
+    const totalSales = parseFloat(document.getElementById('input-total-sales')?.value) || 0;
+    
+    // Kunin ang Total Expenses (kunin ang text mula sa expenses box at alisin ang '₱')
+    const totalExpensesElem = document.querySelector('.text-red-600, #total-expenses-display') || document.querySelector("span:contains('₱')"); 
+    // O kaya ay kunin sa element kung saan nakalagay ang total expenses:
+    let totalExpenses = 0;
+    const expensesText = document.getElementById('total-expenses-box')?.innerText || document.querySelector('.text-red-600')?.innerText || '0';
+    totalExpenses = parseFloat(expensesText.replace(/[^\d.]/g, '')) || 0;
+
+    const netIncome = totalSales - totalExpenses;
+
+    // Kunin ang pangalan ng admin/encoder na nakalagay sa itaas (Ronel Tacocong)
+    const encodedBy = "Ronel Tacocong"; 
+
+    // I-prepare ang data para sa 'sales_expenses_reports' table
+    const reportData = {
+        date_from: startDate,
+        date_to: endDate,
+        total_sales: totalSales,
+        total_expenses: totalExpenses,
+        net_income: netIncome,
+        encoded_by: encodedBy,
+        date_finished: new Date().toISOString()
+    };
+
+    console.log("I-save ang Report sa Supabase:", reportData);
+
+    const { data, error } = await sb
+        .from('sales_expenses_reports')
+        .insert([reportData]);
+
+    if (error) {
+        console.error("Error sa pag-save ng report:", error);
+        alert("Nabigo sa pag-save ng report: " + error.message);
+    } else {
+        alert("Tagumpay na na-save ang Sales & Expenses Report sa Supabase!");
+        // Kung may function ka para i-load ang history log, tawagin natin dito
+        if (typeof loadSalesExpensesHistory === 'function') {
+            loadSalesExpensesHistory();
+        }
+    }
+}
     </script>
 </body>
 </html>
