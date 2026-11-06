@@ -131,24 +131,23 @@
                             <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
                                 <i class="fa-solid fa-user text-xs"></i>
                             </span>
-                            <input type="text" id="login-user" required value="Ronel Tacocong" 
-                                class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:outline-none font-medium transition">
-                        </div>
-                    </div>
+                            <input type="text" id="login-user" required value="" placeholder="Enter username"
+    class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:ring-2">
+</div>
+</div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-300 mb-1.5">Password</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
-                                <i class="fa-solid fa-lock text-xs"></i>
-                            </span>
-                            <input type="password" id="login-pass" required value="Gege@635185" 
-                                class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:outline-none font-medium transition">
-                            <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 cursor-pointer">
-                                <i id="eye-icon" class="fa-solid fa-eye text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
+<div>
+    <label class="block text-xs font-bold text-slate-300 mb-1.5">Password</label>
+    <div class="relative">
+    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500 pointer-events-none">
+        <i class="fa-solid fa-lock text-xs"></i>
+    </span>
+    <input type="password" id="login-pass" name="user_password_fake" autocomplete="new-password" required value="" placeholder="Enter password" class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl pl-9 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:ring-2">
+    <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300">
+        <i id="eye-icon" class="fa-solid fa-eye text-xs"></i>
+    </button>
+</div>
+</div>
 
                     <button type="submit" 
                         class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold  listpy-3 px-4 rounded-xl text-xs shadow-lg shadow-red-900/30 transition transform active:scale-95 flex items-center justify-center space-x-2 cursor-pointer mt-2">
@@ -1653,7 +1652,7 @@
             <h3 class="font-bold text-slate-800 text-sm">Add New User to Supabase</h3>
             <form onsubmit="handleSaveUser(event)" class="space-y-3">
                 <input type="text" id="new-user-name" required placeholder="Username" class="w-full border rounded-xl px-3 py-2 text-xs">
-                <input type="password" id="new-user-pass" required placeholder="Password" class="w-full border rounded-xl px-3 py-2 text-xs">
+                <input type="password" id="new-user-pass" name="password" autocomplete="new-password" required placeholder="Password" class="w-full border rounded-xl px-3 py-2 text-xs">
                 <select id="new-user-role" class="w-full border rounded-xl px-3 py-2 text-xs font-bold bg-white">
                     <option value="COLLECTOR">COLLECTOR</option>
                     <option value="TECHNICIAN">TECHNICIAN</option>
@@ -4734,9 +4733,35 @@ function renderOutstandingBalanceOverview() {
         }
 
         function togglePassword() {
-            const p = document.getElementById('login-pass');
-            if (p) p.type = p.type === 'password' ? 'text' : 'password';
-        }
+    const p = document.getElementById('login-pass');
+    if (p) {
+        p.type = (p.type === 'password') ? 'text' : 'password';
+    }
+}
+        function selectProfile(username) {
+    const userField = document.getElementById('login-user');
+    const passField = document.getElementById('login-pass');
+    
+    if (userField) userField.value = username;
+    
+    if (passField) {
+        // Agad na burahin ang laman
+        passField.value = '';
+        
+        // Harangan ang browser autofill delay injection sa pamamagitan ng sunod-sunod na clearing
+        [10, 50, 100, 200, 500].forEach(delay => {
+            setTimeout(() => {
+                passField.value = '';
+            }, delay);
+        });
+        
+        // Panatilihing nakatutok ang cursor sa password box na malinis at blangko
+        setTimeout(() => {
+            passField.value = '';
+            passField.focus();
+        }, 250);
+    }
+}
         // ⭐ Mag-update bawat minuto para sa live time
         setInterval(() => {
             if (typeof renderOutstandingBalanceOverview === 'function') {
