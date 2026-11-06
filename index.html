@@ -4933,43 +4933,53 @@ async function loadSalesAndIncomeSummary() {
 
     let rawData = [];
 
-    // Kuhanin ang data mula sa umiiral na global array ng sistema (kung saan kumukuha ang Collection Audit)
+    // Hanapin ang tamang global array o function data sa sistema
     if (typeof allCollectionsData !== 'undefined' && Array.isArray(allCollectionsData)) {
         rawData = allCollectionsData;
     } else if (typeof collections !== 'undefined' && Array.isArray(collections)) {
         rawData = collections;
     } else if (typeof globalCollections !== 'undefined' && Array.isArray(globalCollections)) {
         rawData = globalCollections;
+    } else if (window.allCollectionsData && Array.isArray(window.allCollectionsData)) {
+        rawData = window.allCollectionsData;
+    } else if (typeof subscribers !== 'undefined' && Array.isArray(subscribers)) {
+        rawData = subscribers; // Fallback kung sa subscribers array nakalagay ang mga transaksyon
     } else {
-        // Fallback kung saan naka-store ang listahan sa window object o iba pa
-        rawData = window.allCollectionsData || window.auditData || [];
+        // Subukan nating silipin kung may iba pang global variables sa window
+        for (let key in window) {
+            if (Array.isArray(window[key]) && window[key].length > 0 && (window[key][0].amount || window[key][0].total_sales || window[key][0].collector)) {
+                rawData = window[key];
+                break;
+            }
+        }
     }
 
     let ronelTotalSales = 0;
     let rolandoTotalSales = 0;
 
     if (rawData && rawData.length > 0) {
-        rawData.forEach(row => {
-            // Kunin ang petsa ng koleksyon
-            const rowDate = (row.date_collected || row.created_at || row.date || '').split('T')[0];
+        rawData.forEach((row) => {
+            const rowDate = String(row.date_collected || row.created_at || row.date || '').split('T')[0];
+            
+            // Kunin ang collector name at gawing lowercase para madaling masalo kahit "Ronel" o "Rolando" lang
+            const collector = String(row.collector_name || row.collector || row.encoded_by || row.created_by || row.encoder || '').toLowerCase().trim();
+            const amount = parseFloat(row.amount || row.total_sales || row.total || 0) || 0;
 
-            // I-filter ayon sa Start Date at End Date kung nakatakda
             if (startDate && rowDate && rowDate < startDate) return;
             if (endDate && rowDate && rowDate > endDate) return;
 
-            // Kunin ang pangalan ng collector/encoder at ang halaga (amount)
-            const collector = String(row.collector_name || row.collector || row.encoded_by || row.created_by || row.encoder || '').trim();
-            const amount = parseFloat(row.amount || row.total_sales || row.total || 0) || 0;
-
-            if (collector.toLowerCase().includes('ronel tacocong')) {
+            // Salain gamit ang pangalang "ronel" at "rolando" nang hiwalay
+            if (collector.includes('ronel')) {
                 ronelTotalSales += amount;
-            } else if (collector.toLowerCase().includes('rolando tacocong')) {
+            } else if (collector.includes('rolando')) {
                 rolandoTotalSales += amount;
             }
         });
     }
 
-    // I-display ang computed totals sa UI boxes
+    console.log("Updated Totals -> Ronel:", ronelTotalSales, "| Rolando:", rolandoTotalSales);
+
+    // I-display ang mga halaga sa UI boxes
     const ronelBox = document.getElementById('ronel-sales-box');
     const rolandoBox = document.getElementById('rolando-sales-box');
     const totalSalesInput = document.getElementById('input-total-sales');
@@ -4986,7 +4996,6 @@ async function loadSalesAndIncomeSummary() {
         totalSalesInput.value = combinedSales.toFixed(2);
     }
 
-    // Awtomatikong kalkulahin ang Net Income kasama ang mga expenses
     if (typeof calculateSalesAndExpenses === 'function') {
         calculateSalesAndExpenses();
     }
