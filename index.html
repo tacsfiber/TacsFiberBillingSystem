@@ -1195,57 +1195,155 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- SALES & EXPENSES SUMMARY SECTION -->
-                <div id="sales-expenses-section" class="hidden space-y-6">
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                        <h3 class="text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
-                            <span>📊</span> Record Sales, Expenses & Net Income
-                        </h3>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-1">Total Sales (₱)</label>
-                                <input type="number" id="input-total-sales" step="0.01" oninput="calculateNetIncome()" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-600">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-1">Total Expenses (₱)</label>
-                                <input type="number" id="input-total-expenses" step="0.01" oninput="calculateNetIncome()" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 outline-none focus:border-indigo-600">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 mb-1">Net Income (Total Sales - Expenses)</label>
-                                <input type="text" id="input-net-income" readonly class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-extrabold text-indigo-600 outline-none" placeholder="₱0.00">
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end pt-2">
-                            <button onclick="saveSalesExpensesReport()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-sm flex items-center gap-2 transition cursor-pointer">
-                                💾 Save Report to Supabase
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- HISTORY TABLE -->
-                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h4 class="text-xs font-extrabold text-slate-700 uppercase tracking-wide mb-4">📋 Saved Sales & Expenses History Log</h4>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead>
-                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600">
-                                        <th class="p-3 font-bold">Date & Time Finished</th>
-                                        <th class="p-3 font-bold">Total Sales</th>
-                                        <th class="p-3 font-bold">Total Expenses</th>
-                                        <th class="p-3 font-bold">Net Income</th>
-                                        <th class="p-3 font-bold">Encoded By</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="sales-expenses-history-table">
-                                    <tr><td colspan="5" class="text-center text-slate-400 py-6 italic">Awan pay a record.</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+<!-- AUDIT DATE FILTER SECTION -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-filter text-indigo-600"></i>
+            <span class="text-xs font-black uppercase text-slate-700 tracking-wider">Audit Date Filter:</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-500">From:</label>
+                <input type="date" id="audit-start-date" onchange="loadSalesAndIncomeSummary()" class="text-xs font-mono border border-slate-300 rounded-lg px-3 py-1.5 bg-slate-50 text-slate-700">
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-500">To:</label>
+                <input type="date" id="audit-end-date" onchange="loadSalesAndIncomeSummary()" class="text-xs font-mono border border-slate-300 rounded-lg px-3 py-1.5 bg-slate-50 text-slate-700">
+            </div>
+            <button onclick="loadSalesAndIncomeSummary()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow transition flex items-center gap-1.5">
+                <i class="fa-solid fa-rotate"></i> Filter Sales
+            </button>
+        </div>
+    </div>
+               <!-- SALES & EXPENSES SUMMARY TAB CONTENT -->
+<div id="sales-expenses-section" class="hidden space-y-6">
+    
+    <!-- TOP SECTION: NET INCOME & EXPENSES BREAKDOWN -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- NET INCOME SUMMARY CARD -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-sm font-black uppercase text-slate-700 tracking-wider flex items-center gap-2 border-b pb-2">
+                <i class="fa-solid fa-calculator text-emerald-600"></i> Net Income Summary
+            </h3>
+            
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Total Sales (Combined):</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">₱</span>
+                        <input type="number" id="input-total-sales" readonly class="w-full pl-8 pr-3 py-2 text-sm font-mono font-bold bg-slate-50 border border-slate-300 rounded-lg text-slate-700" placeholder="0.00">
                     </div>
                 </div>
+
+                <div class="flex justify-between items-center py-2 px-3 bg-rose-50 rounded-xl border border-rose-100">
+                    <span class="text-xs font-bold text-rose-700">Total Expenses:</span>
+                    <span id="display-total-expenses" class="text-sm font-mono font-black text-rose-600">₱0.00</span>
+                </div>
+
+                <div class="flex justify-between items-center py-3 px-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <span class="text-sm font-black text-emerald-800">Net Income:</span>
+                    <span id="display-net-income" class="text-base font-mono font-black text-emerald-600">₱0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPENSES BREAKDOWN CARD -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="text-sm font-black uppercase text-slate-700 tracking-wider flex items-center gap-2 border-b pb-2">
+                <i class="fa-solid fa-receipt text-rose-600"></i> Expenses Breakdown
+            </h3>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="expenses-breakdown-grid">
+                <!-- ADMIN EXPENSES -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2" id="card-admin-expenses">
+                    <span class="text-[11px] font-black uppercase text-indigo-600 tracking-wider block border-b border-slate-200 pb-1">
+                        <i class="fa-solid fa-user-shield"></i> Admin Expenses
+                    </span>
+                    <div class="space-y-1.5">
+                        <input type="number" id="exp-admin-internet" oninput="calculateSalesAndExpenses()" placeholder="Internet Bill" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-admin-materials" oninput="calculateSalesAndExpenses()" placeholder="Materials" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-admin-salary" oninput="calculateSalesAndExpenses()" placeholder="Salary" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-admin-gasoline" oninput="calculateSalesAndExpenses()" placeholder="Gasoline" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-admin-others" oninput="calculateSalesAndExpenses()" placeholder="Others" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                    </div>
+                </div>
+
+                <!-- ASSISTANT ADMIN EXPENSES -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2" id="card-asst-expenses">
+                    <span class="text-[11px] font-black uppercase text-emerald-600 tracking-wider block border-b border-slate-200 pb-1">
+                        <i class="fa-solid fa-user-gear"></i> Asst Admin Expenses
+                    </span>
+                    <div class="space-y-1.5">
+                        <input type="number" id="exp-asst-internet" oninput="calculateSalesAndExpenses()" placeholder="Internet Bill" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-asst-materials" oninput="calculateSalesAndExpenses()" placeholder="Materials" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-asst-salary" oninput="calculateSalesAndExpenses()" placeholder="Salary" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-asst-gasoline" oninput="calculateSalesAndExpenses()" placeholder="Gasoline" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                        <input type="number" id="exp-asst-others" oninput="calculateSalesAndExpenses()" placeholder="Others" class="w-full text-xs font-mono border border-slate-300 rounded px-2 py-1 bg-white">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOWER SECTION: RONEL & ROLANDO TOTAL SALES BREAKDOWN -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- RONEL TACOCONG TOTAL SALES -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <h4 class="text-xs font-black uppercase tracking-wider text-indigo-700 flex items-center gap-2 border-b pb-2">
+                <i class="fa-solid fa-user-shield"></i> Ronel Tacocong Total Sales
+            </h4>
+            <div id="ronel-sales-box" class="text-2xl font-mono font-black text-slate-800 py-3 text-center bg-indigo-50/50 rounded-xl border border-indigo-100">
+                ₱0.00
+            </div>
+        </div>
+
+        <!-- ROLANDO TACOCONG TOTAL SALES -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+            <h4 class="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-2 border-b pb-2">
+                <i class="fa-solid fa-user-gear"></i> Rolando Tacocong Total Sales
+            </h4>
+            <div id="rolando-sales-box" class="text-2xl font-mono font-black text-slate-800 py-3 text-center bg-emerald-50/50 rounded-xl border border-emerald-100">
+                ₱0.00
+            </div>
+        </div>
+
+    </div>
+
+    <!-- HISTORY LOG SECTION -->
+    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="text-sm font-black uppercase text-slate-700 tracking-wider flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-slate-500"></i> Saved Sales & Expenses History Log
+            </h3>
+            <button onclick="saveSalesReportToSupabase()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-2">
+                <i class="fa-solid fa-cloud-arrow-up"></i> Save Report to Supabase
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b">
+                        <th class="py-3 px-4">Date & Time Finished</th>
+                        <th class="py-3 px-4">Total Sales</th>
+                        <th class="py-3 px-4">Total Expenses</th>
+                        <th class="py-3 px-4">Net Income</th>
+                        <th class="py-3 px-4 text-right">Encoded By</th>
+                    </tr>
+                </thead>
+                <tbody id="sales-expenses-history-tbody">
+                    <tr>
+                        <td colspan="5" class="text-center py-6 text-slate-400 font-sans text-xs">Wala pang record ng sales at expenses.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
             </div>
 
             <!-- USERS VIEW -->
@@ -4828,7 +4926,115 @@ async function importJsonBackup(event) {
     };
     reader.readAsText(file);
 }        
-        
+ // --- LOAD SALES AND INCOME SUMMARY PARA KAY RONEL AT ROLANDO ---
+async function loadSalesAndIncomeSummary() {
+    const startDate = document.getElementById('audit-start-date')?.value;
+    const endDate = document.getElementById('audit-end-date')?.value;
+
+    // 1. Kumuha ng data mula sa Supabase o sa existing global collection array
+    let rawData = [];
+    
+    // Subukan muna sa Supabase (kung may 'collections' o 'audit' table)
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (sb) {
+        const { data, error } = await sb.from('collections').select('*');
+        if (!error && data && data.length > 0) {
+            rawData = data;
+        }
+    }
+
+    // Kung walang nakuha sa Supabase, gamitin ang lokal/global array na ginagamit ng Collection Audit tab
+    if (rawData.length === 0) {
+        if (typeof allCollectionsData !== 'undefined') rawData = allCollectionsData;
+        else if (typeof globalCollections !== 'undefined') rawData = globalCollections;
+        else if (typeof collectionsList !== 'undefined') rawData = collectionsList;
+    }
+
+    let ronelTotalSales = 0;
+    let rolandoTotalSales = 0;
+
+    rawData.forEach(row => {
+        // Kunin ang Date Collected (nililinis ang T o oras kung mayroon)
+        const rowDate = (row.date_collected || row.created_at || row.date || '').split('T')[0];
+
+        // Date Filter matching
+        if (startDate && rowDate && rowDate < startDate) return;
+        if (endDate && rowDate && rowDate > endDate) return;
+
+        // Kunin ang Collector / Encoder name at Amount
+        const collector = String(row.collector_name || row.collector || row.encoded_by || row.created_by || row.encoder || '');
+        const amount = parseFloat(row.amount || row.total_sales || row.total || 0) || 0;
+
+        if (collector.toLowerCase().includes('ronel tacocong')) {
+            ronelTotalSales += amount;
+        } else if (collector.toLowerCase().includes('rolando tacocong')) {
+            rolandoTotalSales += amount;
+        }
+    });
+
+    // 2. I-update ang UI Elements
+    const ronelBox = document.getElementById('ronel-sales-box');
+    const rolandoBox = document.getElementById('rolando-sales-box');
+    const totalSalesInput = document.getElementById('input-total-sales');
+
+    if (ronelBox) {
+        ronelBox.innerText = `₱${ronelTotalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+    if (rolandoBox) {
+        rolandoBox.innerText = `₱${rolandoTotalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    const combinedSales = ronelTotalSales + rolandoTotalSales;
+    if (totalSalesInput) {
+        totalSalesInput.value = combinedSales.toFixed(2);
+    }
+
+    // 3. I-calculate ang Net Income at Expenses
+    if (typeof calculateSalesAndExpenses === 'function') {
+        calculateSalesAndExpenses();
+    }
+} 
+window.addEventListener('DOMContentLoaded', () => {
+    loadSalesAndIncomeSummary();
+});
+// --- FUNCTION PARA SA PAG-COMPUTE NG EXPENSES AT NET INCOME ---
+function calculateSalesAndExpenses() {
+    // Kunin ang mga values mula sa Admin Expenses inputs
+    const adminInternet = parseFloat(document.getElementById('exp-admin-internet')?.value) || 0;
+    const adminMaterials = parseFloat(document.getElementById('exp-admin-materials')?.value) || 0;
+    const adminSalary = parseFloat(document.getElementById('exp-admin-salary')?.value) || 0;
+    const adminGasoline = parseFloat(document.getElementById('exp-admin-gasoline')?.value) || 0;
+    const adminOthers = parseFloat(document.getElementById('exp-admin-others')?.value) || 0;
+
+    // Kunin ang mga values mula sa Asst Admin Expenses inputs
+    const asstInternet = parseFloat(document.getElementById('exp-asst-internet')?.value) || 0;
+    const asstMaterials = parseFloat(document.getElementById('exp-asst-materials')?.value) || 0;
+    const asstSalary = parseFloat(document.getElementById('exp-asst-salary')?.value) || 0;
+    const asstGasoline = parseFloat(document.getElementById('exp-asst-gasoline')?.value) || 0;
+    const asstOthers = parseFloat(document.getElementById('exp-asst-others')?.value) || 0;
+
+    // Kwentahin ang Kabuuang Expenses
+    const totalExpenses = adminInternet + adminMaterials + adminSalary + adminGasoline + adminOthers +
+                          asstInternet + asstMaterials + asstSalary + asstGasoline + asstOthers;
+
+    // Kunin ang Total Sales
+    const totalSales = parseFloat(document.getElementById('input-total-sales')?.value) || 0;
+    
+    // Kwentahin ang Net Income (Sales - Expenses)
+    const netIncome = totalSales - totalExpenses;
+
+    // I-display ang Total Expenses
+    const displayExpenses = document.getElementById('display-total-expenses');
+    if (displayExpenses) {
+        displayExpenses.innerText = `₱${totalExpenses.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+
+    // I-display ang Net Income
+    const displayNetIncome = document.getElementById('display-net-income');
+    if (displayNetIncome) {
+        displayNetIncome.innerText = `₱${netIncome.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    }
+}
     </script>
 </body>
 </html>
