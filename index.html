@@ -4931,48 +4931,45 @@ async function loadSalesAndIncomeSummary() {
     const startDate = document.getElementById('audit-start-date')?.value;
     const endDate = document.getElementById('audit-end-date')?.value;
 
-    // 1. Kumuha ng data mula sa Supabase o sa existing global collection array
     let rawData = [];
-    
-    // Subukan muna sa Supabase (kung may 'collections' o 'audit' table)
-    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
-    if (sb) {
-        const { data, error } = await sb.from('collections').select('*');
-        if (!error && data && data.length > 0) {
-            rawData = data;
-        }
-    }
 
-    // Kung walang nakuha sa Supabase, gamitin ang lokal/global array na ginagamit ng Collection Audit tab
-    if (rawData.length === 0) {
-        if (typeof allCollectionsData !== 'undefined') rawData = allCollectionsData;
-        else if (typeof globalCollections !== 'undefined') rawData = globalCollections;
-        else if (typeof collectionsList !== 'undefined') rawData = collectionsList;
+    // Kuhanin ang data mula sa umiiral na global array ng sistema (kung saan kumukuha ang Collection Audit)
+    if (typeof allCollectionsData !== 'undefined' && Array.isArray(allCollectionsData)) {
+        rawData = allCollectionsData;
+    } else if (typeof collections !== 'undefined' && Array.isArray(collections)) {
+        rawData = collections;
+    } else if (typeof globalCollections !== 'undefined' && Array.isArray(globalCollections)) {
+        rawData = globalCollections;
+    } else {
+        // Fallback kung saan naka-store ang listahan sa window object o iba pa
+        rawData = window.allCollectionsData || window.auditData || [];
     }
 
     let ronelTotalSales = 0;
     let rolandoTotalSales = 0;
 
-    rawData.forEach(row => {
-        // Kunin ang Date Collected (nililinis ang T o oras kung mayroon)
-        const rowDate = (row.date_collected || row.created_at || row.date || '').split('T')[0];
+    if (rawData && rawData.length > 0) {
+        rawData.forEach(row => {
+            // Kunin ang petsa ng koleksyon
+            const rowDate = (row.date_collected || row.created_at || row.date || '').split('T')[0];
 
-        // Date Filter matching
-        if (startDate && rowDate && rowDate < startDate) return;
-        if (endDate && rowDate && rowDate > endDate) return;
+            // I-filter ayon sa Start Date at End Date kung nakatakda
+            if (startDate && rowDate && rowDate < startDate) return;
+            if (endDate && rowDate && rowDate > endDate) return;
 
-        // Kunin ang Collector / Encoder name at Amount
-        const collector = String(row.collector_name || row.collector || row.encoded_by || row.created_by || row.encoder || '');
-        const amount = parseFloat(row.amount || row.total_sales || row.total || 0) || 0;
+            // Kunin ang pangalan ng collector/encoder at ang halaga (amount)
+            const collector = String(row.collector_name || row.collector || row.encoded_by || row.created_by || row.encoder || '').trim();
+            const amount = parseFloat(row.amount || row.total_sales || row.total || 0) || 0;
 
-        if (collector.toLowerCase().includes('ronel tacocong')) {
-            ronelTotalSales += amount;
-        } else if (collector.toLowerCase().includes('rolando tacocong')) {
-            rolandoTotalSales += amount;
-        }
-    });
+            if (collector.toLowerCase().includes('ronel tacocong')) {
+                ronelTotalSales += amount;
+            } else if (collector.toLowerCase().includes('rolando tacocong')) {
+                rolandoTotalSales += amount;
+            }
+        });
+    }
 
-    // 2. I-update ang UI Elements
+    // I-display ang computed totals sa UI boxes
     const ronelBox = document.getElementById('ronel-sales-box');
     const rolandoBox = document.getElementById('rolando-sales-box');
     const totalSalesInput = document.getElementById('input-total-sales');
@@ -4989,7 +4986,7 @@ async function loadSalesAndIncomeSummary() {
         totalSalesInput.value = combinedSales.toFixed(2);
     }
 
-    // 3. I-calculate ang Net Income at Expenses
+    // Awtomatikong kalkulahin ang Net Income kasama ang mga expenses
     if (typeof calculateSalesAndExpenses === 'function') {
         calculateSalesAndExpenses();
     }
