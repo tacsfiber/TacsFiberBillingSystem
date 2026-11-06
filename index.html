@@ -5098,6 +5098,58 @@ async function saveSalesReportToSupabase() {
 }
 
 // Function para i-load at ipakita ang mga nakaraang ulat sa History Log table sa UI
+async function saveSalesReportToSupabase() {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (!sb) {
+        alert("Wala koneksyon sa Supabase!");
+        return;
+    }
+
+    const startDate = document.getElementById('audit-start-date')?.value;
+    const endDate = document.getElementById('audit-end-date')?.value;
+    
+    if (!startDate || !endDate) {
+        alert("Pakilagay muna ang 'From' at 'To' dates sa Audit Date Filter bago mag-save.");
+        return;
+    }
+
+    const totalSales = parseFloat(document.getElementById('input-total-sales')?.value) || 0;
+    
+    let totalExpenses = 0;
+    const expensesElem = document.querySelector('.text-red-600') || document.getElementById('total-expenses-display');
+    if (expensesElem) {
+        totalExpenses = parseFloat(expensesElem.innerText.replace(/[^\d.]/g, '')) || 0;
+    }
+
+    const netIncome = totalSales - totalExpenses;
+    const encodedBy = "Ronel Tacocong"; 
+
+    const reportData = {
+        date_from: startDate,
+        date_to: endDate,
+        total_sales: totalSales,
+        total_expenses: totalExpenses,
+        net_income: netIncome,
+        encoded_by: encodedBy,
+        date_finished: new Date().toISOString()
+    };
+
+    console.log("I-save ang Report sa Supabase:", reportData);
+
+    const { data, error } = await sb
+        .from('sales_expenses_reports')
+        .insert([reportData]);
+
+    if (error) {
+        console.error("Error sa pag-save ng report:", error);
+        alert("Nabigo sa pag-save ng report: " + error.message);
+    } else {
+        alert("Tagumpay na na-save ang Sales & Expenses Report!");
+        // Tawagin agad ang pag-load para lumitaw sa UI
+        loadSalesExpensesHistory();
+    }
+}
+
 async function loadSalesExpensesHistory() {
     const sb = typeof getSupabase === 'function' ? getSupabase() : null;
     if (!sb) return;
@@ -5114,19 +5166,26 @@ async function loadSalesExpensesHistory() {
 
     console.log("History reports mula Supabase:", data);
 
-    // Hanapin ang table sa loob ng Saved Sales & Expenses History Log section
-    const section = document.querySelector('#saved-sales-expenses-history-log') || document.querySelector('h2, h3, div:has(> b:contains("SAVED SALES"))')?.parentElement;
-    let table = document.querySelector('table');
-    
-    if (!table) {
-        console.warn("Walang makitang table.");
+    // Hanapin ang table sa ilalim ng Saved Sales & Expenses History Log
+    const tables = document.querySelectorAll('table');
+    let targetTable = null;
+
+    // Hanapin ang table na may ganitong mga header
+    tables.forEach(tbl => {
+        if (tbl.innerText.includes('TOTAL SALES') && tbl.innerText.includes('ENCODED BY')) {
+            targetTable = tbl;
+        }
+    });
+
+    if (!targetTable) {
+        console.warn("Hindi natagpuan ang history table.");
         return;
     }
 
-    let tbody = table.querySelector('tbody');
+    let tbody = targetTable.querySelector('tbody');
     if (!tbody) {
         tbody = document.createElement('tbody');
-        table.appendChild(tbody);
+        targetTable.appendChild(tbody);
     }
 
     tbody.innerHTML = '';
@@ -5149,7 +5208,7 @@ async function loadSalesExpensesHistory() {
     }
 }
 
-// Tawagin ito agad pagka-load
+// I-load agad pagka-bukas o pagka-refresh ng pahina
 window.addEventListener('DOMContentLoaded', () => {
     loadSalesExpensesHistory();
 });
