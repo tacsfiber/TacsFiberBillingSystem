@@ -4928,47 +4928,54 @@ async function importJsonBackup(event) {
 }        
  // --- LOAD SALES AND INCOME SUMMARY PARA KAY RONEL AT ROLANDO ---
 async function loadSalesAndIncomeSummary() {
+    const sb = typeof getSupabase === 'function' ? getSupabase() : null;
+    if (!sb) {
+        console.error("Supabase client is not available.");
+        return;
+    }
+
     const startDate = document.getElementById('audit-start-date')?.value;
     const endDate = document.getElementById('audit-end-date')?.value;
 
-    let rawData = [];
+    // Kunin ang data nang direkta mula sa 'payments' table sa Supabase
+    let { data, error } = await sb.from('payments').select('*');
 
-    // Hanapin ang tamang global array o function data sa sistema
-    if (typeof allCollectionsData !== 'undefined' && Array.isArray(allCollectionsData)) {
-        rawData = allCollectionsData;
-    } else if (typeof collections !== 'undefined' && Array.isArray(collections)) {
-        rawData = collections;
-    } else if (typeof globalCollections !== 'undefined' && Array.isArray(globalCollections)) {
-        rawData = globalCollections;
-    } else if (window.allCollectionsData && Array.isArray(window.allCollectionsData)) {
-        rawData = window.allCollectionsData;
-    } else if (typeof subscribers !== 'undefined' && Array.isArray(subscribers)) {
-        rawData = subscribers; // Fallback kung sa subscribers array nakalagay ang mga transaksyon
-    } else {
-        // Subukan nating silipin kung may iba pang global variables sa window
-        for (let key in window) {
-            if (Array.isArray(window[key]) && window[key].length > 0 && (window[key][0].amount || window[key][0].total_sales || window[key][0].collector)) {
-                rawData = window[key];
-                break;
-            }
+    if (error) {
+        console.error("Error sa pagkuha ng payments data mula sa Supabase:", error);
+        // Fallback kung sakaling sa payment_logs naman nakasalang
+        const res2 = await sb.from('payment_logs').select('*');
+        if (!res2.error && res2.data) {
+            data = res2.data;
+        } else {
+            return;
         }
     }
 
     let ronelTotalSales = 0;
     let rolandoTotalSales = 0;
 
-    if (rawData && rawData.length > 0) {
-        rawData.forEach((row) => {
-            const rowDate = String(row.date_collected || row.created_at || row.date || '').split('T')[0];
-            
-            // Kunin ang collector name at gawing lowercase para madaling masalo kahit "Ronel" o "Rolando" lang
-            const collector = String(row.collector_name || row.collector || row.encoded_by || row.created_by || row.encoder || '').toLowerCase().trim();
-            const amount = parseFloat(row.amount || row.total_sales || row.total || 0) || 0;
+    if (data && data.length > 0) {
+        data.forEach((row) => {
+            // Gamitin ang 'payment_date' galing sa Supabase payments table
+            const rowDate = String(
+                row.payment_date || row.date_paid || row.created_at || ''
+            ).split('T')[0];
 
+            // Gamitin ang 'collected_by' kung saan nakalagay ang pangalan nina Ronel o Rolando
+            const collector = String(
+                row.collected_by || row.encoder || row.collector || ''
+            ).toLowerCase().trim();
+
+            // Gamitin ang 'amount_paid' o 'amount' para sa halaga ng benta
+            const amount = parseFloat(
+                row.amount_paid || row.amount || row.payment_amount || 0
+            ) || 0;
+
+            // Date Filter Check (From at To)
             if (startDate && rowDate && rowDate < startDate) return;
             if (endDate && rowDate && rowDate > endDate) return;
 
-            // Salain gamit ang pangalang "ronel" at "rolando" nang hiwalay
+            // Salain kung sino ang kumolekta
             if (collector.includes('ronel')) {
                 ronelTotalSales += amount;
             } else if (collector.includes('rolando')) {
@@ -4977,9 +4984,9 @@ async function loadSalesAndIncomeSummary() {
         });
     }
 
-    console.log("Updated Totals -> Ronel:", ronelTotalSales, "| Rolando:", rolandoTotalSales);
+    console.log("Supabase Payments Totals -> Ronel:", ronelTotalSales, "| Rolando:", rolandoTotalSales);
 
-    // I-display ang mga halaga sa UI boxes
+    // I-display ang mga nakolektang halaga sa kani-kanilang kahon
     const ronelBox = document.getElementById('ronel-sales-box');
     const rolandoBox = document.getElementById('rolando-sales-box');
     const totalSalesInput = document.getElementById('input-total-sales');
@@ -4991,11 +4998,13 @@ async function loadSalesAndIncomeSummary() {
         rolandoBox.innerText = `₱${rolandoTotalSales.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
+    // Ilagay ang pinagsamang Total Sales sa input field
     const combinedSales = ronelTotalSales + rolandoTotalSales;
     if (totalSalesInput) {
         totalSalesInput.value = combinedSales.toFixed(2);
     }
 
+    // Awtomatikong i-trigger ang Net Income calculation
     if (typeof calculateSalesAndExpenses === 'function') {
         calculateSalesAndExpenses();
     }
