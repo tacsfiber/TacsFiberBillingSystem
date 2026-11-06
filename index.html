@@ -5112,13 +5112,21 @@ async function loadSalesExpensesHistory() {
         return;
     }
 
-    // Hanapin ang table body kung saan nakalagay ang history log
-    // (Siguraduhing may id kang `sales-history-tbody` o katulad nito sa table body sa ibaba)
-    const tbody = document.getElementById('sales-history-tbody') || document.querySelector('#saved-sales-expenses-history-log tbody');
+    console.log("History reports mula Supabase:", data);
+
+    // Hanapin ang table sa loob ng Saved Sales & Expenses History Log section
+    const section = document.querySelector('#saved-sales-expenses-history-log') || document.querySelector('h2, h3, div:has(> b:contains("SAVED SALES"))')?.parentElement;
+    let table = document.querySelector('table');
     
-    if (!tbody) {
-        console.warn("Hindi natagpuan ang history table body sa UI.");
+    if (!table) {
+        console.warn("Walang makitang table.");
         return;
+    }
+
+    let tbody = table.querySelector('tbody');
+    if (!tbody) {
+        tbody = document.createElement('tbody');
+        table.appendChild(tbody);
     }
 
     tbody.innerHTML = '';
@@ -5129,9 +5137,9 @@ async function loadSalesExpensesHistory() {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td class="px-4 py-2 border-b">${formattedDate}</td>
-                <td class="px-4 py-2 border-b">₱${parseFloat(row.total_sales || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td class="px-4 py-2 border-b">₱${parseFloat(row.total_expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                <td class="px-4 py-2 border-b">₱${parseFloat(row.net_income || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="px-4 py-2 border-b">₱${parseFloat(row.total_sales || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="px-4 py-2 border-b">₱${parseFloat(row.total_expenses || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="px-4 py-2 border-b">₱${parseFloat(row.net_income || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td class="px-4 py-2 border-b">${row.encoded_by || 'Ronel Tacocong'}</td>
             `;
             tbody.appendChild(tr);
@@ -5141,7 +5149,7 @@ async function loadSalesExpensesHistory() {
     }
 }
 
-// Tawagin ito habang nagloload ang pahina para kusang lumitaw ang nakaraang history
+// Tawagin ito agad pagka-load
 window.addEventListener('DOMContentLoaded', () => {
     loadSalesExpensesHistory();
 });
